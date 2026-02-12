@@ -7,6 +7,7 @@ from routes.utils import title_case
 import os
 import uuid
 import json
+import re
 
 product_bp = Blueprint("products", __name__, url_prefix="/api/products")
 
@@ -32,9 +33,11 @@ def add_product():
     if not category_doc:
         return jsonify({"message": "Invalid category"}), 400
 
+    category_name = re.sub(r"[^a-zA-Z0-9_-]", "_", category_doc['name'])
+
     upload_dir = os.path.join(
         current_app.root_path,
-        "static", "uploads", category_doc["name"]
+        "static", "uploads", category_name
     )
     os.makedirs(upload_dir, exist_ok=True)
 
@@ -217,16 +220,26 @@ def update_product(id):
         update_data["details"] = json.loads(details)
 
     if images and images[0].filename:
+
         for old_img in product.get("images", []):
             old_path = os.path.join(current_app.root_path, old_img.lstrip("/"))
             if os.path.exists(old_path):
                 os.remove(old_path)
 
+        final_category_id = ObjectId(category_id) if category_id else product["category_id"]
+
+        category_doc = mongo.db.category.find_one({"_id": final_category_id})
+        if not category_doc:
+            return jsonify({"message": "Category not found"}), 400
+
+        import re
+        category_name = re.sub(r"[^a-zA-Z0-9_-]", "_", category_doc["name"])
+
         upload_dir = os.path.join(
             current_app.root_path,
             "static",
             "uploads",
-            str(product["category_id"])
+            category_name
         )
         os.makedirs(upload_dir, exist_ok=True)
 
@@ -237,7 +250,7 @@ def update_product(id):
             image_path = os.path.join(upload_dir, filename)
             image.save(image_path)
 
-            new_images.append(f"/static/uploads/{product['category_id']}/{filename}")
+            new_images.append(f"/static/uploads/{category_name}/{filename}")
 
         update_data["images"] = new_images
         update_data["image_url"] = new_images[0]

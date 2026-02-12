@@ -15,21 +15,48 @@
 <div class="body-content">
 
   <div class="product-details-layout">
-
-    <!-- LEFT : IMAGE GALLERY -->
     <div class="product-media">
 
-      <!-- LEFT THUMBNAILS -->
-      <div id="pd-thumbs-left" class="thumbs-vertical"></div>
+      <!-- LEFT THUMB COLUMN -->
+      <div class="thumbs-column">
+        <div id="pd-thumbs-left" class="thumbs-vertical"></div>
+      </div>
 
-      <!-- CENTER MAIN IMAGE -->
-      <div class="product-main-image">
-        <img id="pd-main-image" src="/static/no-image.png">
+      <!-- MAIN IMAGE + VIEW TEXT -->
+      <div class="product-main-image-wrapper">
+
+        <div class="product-main-image">
+          <img id="pd-main-image" src="/static/no-image.png">
+        </div>
+
+        <p id="pd-view-all" class="view-all-images" style="display:none;">
+          Click to see full view
+        </p>
+
+      </div>
+
+      <!-- FULL GALLERY MODAL (UNCHANGED) -->
+      <div id="pd-gallery-modal" class="pd-modal">
+        <div class="pd-modal-content">
+          <span class="pd-close">&times;</span>
+
+          <div class="pd-modal-body">
+            <div class="pd-modal-left">
+              <img id="pd-modal-main" src="" />
+            </div>
+
+            <div class="pd-modal-right">
+              <h2 id="pd-modal-title"></h2>
+              <p id="pd-modal-desc" class="pd-modal-desc"></p>
+              <div id="pd-modal-thumbs" class="pd-modal-thumbs-grid"></div>
+            </div>
+          </div>
+
+        </div>
       </div>
 
     </div>
 
-    <!-- RIGHT : INFO -->
     <div class="product-info">
 
       <h1 id="pd-name">Loading...</h1>
@@ -40,7 +67,6 @@
       <p><b>Category:</b> <span id="pd-category"></span></p>
       <div id="stockLabel" class="stock-label hidden"></div>
 
-      <!-- USER / GUEST ACTIONS -->
       {% if session.role != "admin" %}
       <div id="qtyWrapper" style="display:none">
         Quantity:
@@ -75,7 +101,6 @@
       </div>
       {% endif %}
 
-      <!-- ADMIN ACTION -->
       {% if session.role == "admin" %}
       <div class="product-actions">
         <button class="add-btn"
@@ -97,13 +122,11 @@
   <hr>
   <div class="product-details-card">
 
-    <!-- SINGLE HEADER WITH TOGGLE -->
     <div class="product-details-toggle" onclick="toggleMainDetails()">
       <span>Product Details</span>
       <i id="mainArrow" class="fa-solid fa-chevron-down"></i>
     </div>
 
-    <!-- BODY -->
     <div id="mainDetailsBody" class="accordion-hidden">
       <div id="nestedDetails"></div>
     </div>

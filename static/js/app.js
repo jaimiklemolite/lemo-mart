@@ -274,7 +274,6 @@ function renderProducts(list, showAdmin = false, isAdminView = false) {
           </div>
         ` : ""}
 
-        <!-- IMAGE SLIDER -->
         <div class="product-image-slider">
           <button class="arrow left"
             onclick="slideProductImage('${p._id}', -1)">‹</button>
@@ -355,7 +354,7 @@ function viewProduct(id) {
   window.location.href = "/products/" + id;
 }
 
-function editProductById(productId) {
+async function editProductById(productId) {
   const p = productCache.find(prod => prod._id === productId);
   if (!p) return;
 
@@ -373,30 +372,54 @@ function editProductById(productId) {
     categorySelect.classList.add("locked-input");
   }
 
-  loadSpecsForEdit(p.specs || []);
+  try {
+    const res = await fetch(`/api/categories/${p.category_id}/template`, {
+      credentials: "include"
+    });
 
-  const detailContainer = document.getElementById("detailSections");
-  detailContainer.innerHTML = "";
+    const template = await res.json();
 
-  if (p.details && p.details.length) {
-    currentDetailGroup = p.details[0].group || "";
+    clearSpecs();
+    clearDetails();
 
-    const groupInput = document.getElementById("detailGroupInput");
-    if (groupInput) {
-      groupInput.value = currentDetailGroup;
-      groupInput.readOnly = true;
-      groupInput.classList.add("locked-input");
-    }
+    (template.spec_names || []).forEach((name, index) => {
+
+      let existingSpec =
+        (p.specs || []).find(s => s.name === name);
+
+      if (!existingSpec && p.specs && p.specs[index]) {
+        existingSpec = p.specs[index];
+      }
+
+      addSpecRow(
+        name,
+        existingSpec?.value || "",
+        true,
+        true
+      );
+    });
+
+    (template.detail_titles || []).forEach((title, index) => {
+
+      let existingDetail =
+        (p.details || []).find(d => d.title === title);
+
+      if (!existingDetail && p.details && p.details[index]) {
+        existingDetail = p.details[index];
+      }
+
+      addDetailSection(
+        title,
+        existingDetail?.content || [],
+        true,
+        true
+      );
+    });
+
+  } catch (err) {
+    console.error("Template load error:", err);
+    showToast("Failed to load latest category template", "error");
   }
-
-  (p.details || []).forEach(sec => {
-    addDetailSection(
-      sec.title,
-      sec.content,
-      sec.is_default === true,
-      sec.is_default === true
-    );
-  });
 }
 
 function loadCategoryDropdown() {
@@ -724,7 +747,7 @@ function updateCartCount() {
 function updateWishlistCount() {
   fetch("/api/users/wishlist", { credentials: "include" })
     .then(res => {
-      if (res.status === 401) return null; // guest
+      if (res.status === 401) return null;
       return res.json();
     })
     .then(data => {

@@ -98,7 +98,7 @@ def update_category(category_id):
     name = data.get("name")
     spec_names = data.get("spec_names", [])
     detail_titles = data.get("detail_titles", [])
-    
+
     if not name:
         return jsonify({"message": "Name required"}), 400
 
@@ -121,6 +121,47 @@ def update_category(category_id):
             }
         }
     )
+
+    products = mongo.db.products.find({"category_id": ObjectId(category_id)})
+
+    for product in products:
+        old_specs = product.get("specs", [])
+        old_details = product.get("details", [])
+
+        new_specs = []
+        new_details = []
+
+        for i, spec_name in enumerate(spec_names):
+            value = ""
+            if i < len(old_specs):
+                value = old_specs[i].get("value", "")
+
+            new_specs.append({
+                "name": spec_name,
+                "value": value,
+                "is_default": True
+            })
+
+        for i, title in enumerate(detail_titles):
+            content = []
+            if i < len(old_details):
+                content = old_details[i].get("content", [])
+
+            new_details.append({
+                "title": title,
+                "content": content,
+                "is_default": True
+            })
+
+        mongo.db.products.update_one(
+            {"_id": product["_id"]},
+            {
+                "$set": {
+                    "specs": new_specs,
+                    "details": new_details
+                }
+            }
+        )
 
     updated = mongo.db.category.find_one({"_id": ObjectId(category_id)})
     if not updated:

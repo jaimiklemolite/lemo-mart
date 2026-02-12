@@ -39,7 +39,7 @@ def place_order():
         snapshot_url = "/static/no-image.png"
 
         if isinstance(product.get("images"), list) and product["images"]:
-            original_url = product["images"][0]   # first product image
+            original_url = product["images"][0]
             original_path = os.path.join(
                 current_app.root_path,
                 original_url.lstrip("/")

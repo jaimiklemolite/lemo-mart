@@ -1,6 +1,5 @@
 <header class="main-header">
 
-  <!-- LEFT -->
   <div class="header-left">
     <div class="logo" onclick="location.href='/dashboard'">
       Lemo<span>Mart</span>
@@ -12,7 +11,6 @@
     </nav>
   </div>
 
-  <!-- CENTER -->
   <div class="header-search">
     <input
       id="searchInput"
@@ -23,10 +21,8 @@
     <button onclick="applyFilters?.()">Search</button>
   </div>
 
-  <!-- RIGHT -->
   <div class="header-right">
 
-    <!-- CART -->
     {% if session.role != "admin" %}
     <div class="icon-btn" onclick="location.href='/cart'" title="Cart">
       Cart <i class="fa-solid fa-shopping-cart"></i>
@@ -34,7 +30,6 @@
     </div>
     {% endif %}
 
-    <!-- WISHLIST -->
     {% if session.role != "admin" %}
     <div class="icon-btn" onclick="location.href='/wishlist'" title="Wishlist">
       WishList <i class="fa-solid fa-heart"></i>
@@ -42,7 +37,6 @@
     </div>
     {% endif %}
 
-    <!-- PROFILE -->
     <div class="icon-btn profile-menu">
       <span class="profile-icon">
         Account <i class="fa-solid fa-caret-down"></i>

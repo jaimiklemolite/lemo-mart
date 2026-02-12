@@ -33,17 +33,13 @@ function loadProductDetails(productId) {
       CURRENT_STOCK = p.quantity ?? 0;
 
       const stockLabel = document.getElementById("stockLabel");
-
       if (stockLabel) {
         if (CURRENT_STOCK > 0) {
           stockLabel.textContent = `In Stock (${CURRENT_STOCK})`;
-
           stockLabel.classList.remove("hidden", "out-of-stock");
           stockLabel.classList.add("in-the-stock");
-
         } else {
           stockLabel.textContent = "Out of Stock";
-
           stockLabel.classList.remove("hidden", "in-the-stock");
           stockLabel.classList.add("out-of-stock");
         }
@@ -56,35 +52,125 @@ function loadProductDetails(productId) {
 
       const mainImg = document.getElementById("pd-main-image");
       const leftBox = document.getElementById("pd-thumbs-left");
+      const viewAll = document.getElementById("pd-view-all");
+
+      const modal = document.getElementById("pd-gallery-modal");
+      const modalMain = document.getElementById("pd-modal-main");
+      const modalThumbs = document.getElementById("pd-modal-thumbs");
+      const closeBtn = document.querySelector(".pd-close");
 
       const images = (p.images && p.images.length)
         ? p.images
         : ["/static/no-image.png"];
 
-      if (mainImg) {
-        mainImg.src = images[0];
-      }
+      if (mainImg) mainImg.src = images[0];
 
       if (leftBox) {
-        leftBox.innerHTML = images.map((img, i) => `
-          <img src="${img}"
-              class="${i === 0 ? "active" : ""}"
-              onclick="switchProductImage('${img}', this)">
-        `).join("");
+        leftBox.innerHTML = "";
+
+        const maxVisible = 3;
+
+        /* ===== NORMAL THUMB TILES ===== */
+        images.slice(0, maxVisible).forEach((img, i) => {
+          const tile = document.createElement("div");
+          tile.className = "thumb-tile";
+
+          if (i === 0) tile.classList.add("active");
+
+          const imgTag = document.createElement("img");
+          imgTag.src = img;
+
+          tile.appendChild(imgTag);
+
+          /* hover → preview in main image */
+          tile.onmouseenter = () => {
+            mainImg.src = img;
+
+            document.querySelectorAll(".thumb-tile")
+              .forEach(t => t.classList.remove("active"));
+
+            tile.classList.add("active");
+          };
+
+          leftBox.appendChild(tile);
+        });
+
+        /* ===== +N TILE ===== */
+        if (images.length > maxVisible) {
+          const more = document.createElement("div");
+          more.className = "thumb-tile thumb-more";
+
+          const imgTag = document.createElement("img");
+          imgTag.src = images[maxVisible];
+
+          const overlay = document.createElement("span");
+          overlay.textContent = `+${images.length - maxVisible}`;
+
+          more.appendChild(imgTag);
+          more.appendChild(overlay);
+
+          /* hover → show 4th image preview */
+          more.onmouseenter = () => {
+            mainImg.src = images[maxVisible];
+
+            document.querySelectorAll(".thumb-tile")
+              .forEach(t => t.classList.remove("active"));
+          };
+
+          /* click → open modal */
+          more.onclick = () => viewAll.click();
+
+          leftBox.appendChild(more);
+        }
+      }
+
+      if (viewAll) {
+        viewAll.style.display = images.length > 3 ? "block" : "none";
+      }
+
+      if (viewAll && images.length > 3) {
+        viewAll.onclick = () => {
+          modal.style.display = "block";
+
+          /* SET MAIN IMAGE */
+          modalMain.src = images[0];
+
+          /* SET TITLE + DESC */
+          document.getElementById("pd-modal-title").textContent = p.name;
+          document.getElementById("pd-modal-desc").textContent = p.description;
+
+          /* BUILD THUMB GRID */
+          modalThumbs.innerHTML = images.map((img, i) => `
+            <img src="${img}"
+                class="${i === 0 ? "active" : ""}"
+                onclick="
+                  document.getElementById('pd-modal-main').src='${img}';
+                  document.querySelectorAll('.pd-modal-thumbs-grid img')
+                    .forEach(el => el.classList.remove('active'));
+                  this.classList.add('active');
+                ">
+          `).join("");
+        };
+      }
+
+      if (closeBtn) closeBtn.onclick = () => modal.style.display = "none";
+
+      if (modal) {
+        modal.onclick = (e) => {
+          if (e.target === modal) modal.style.display = "none";
+        };
       }
 
       if (window.USER_ROLE !== "admin") {
         setupQuantityAndButtons(CURRENT_STOCK);
       }
 
-      if (typeof loadWishlistHearts === "function") {
-        loadWishlistHearts();
-      }
+      if (typeof loadWishlistHearts === "function") loadWishlistHearts();
 
       fetch("/api/users/wishlist", { credentials: "include" })
         .then(res => res.ok ? res.json() : null)
         .then(wishlist => {
-          if (!wishlist || !wishlist.products) return;
+          if (!wishlist?.products) return;
 
           const btn = document.getElementById("pdWishlistBtn");
           if (!btn) return;
@@ -132,18 +218,15 @@ function loadProductDetails(productId) {
       if (nestedBox && Array.isArray(p.details)) {
         nestedBox.innerHTML = p.details.map((sec, i) => `
           <div class="nested-section">
-
             <div class="nested-header" onclick="toggleNested(${i})">
               <span>${sec.title}</span>
               <span id="nestedArrow-${i}">▶</span>
             </div>
-
             <div id="nestedBody-${i}" class="accordion-hidden">
               <ul>
                 ${sec.content.map(line => `<li>${line}</li>`).join("")}
               </ul>
             </div>
-
           </div>
         `).join("");
       }
