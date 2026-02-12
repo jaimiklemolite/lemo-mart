@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Orders – LemoMart</title>
+
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+{% include 'header.html' %}
+
+<div class="body-content">
+    <h2 style="margin-top:20px;">My Orders</h2>
+    <div class="order-filter-bar">
+      <input
+        type="text"
+        id="orderSearch"
+        placeholder="Search by Order ID or Product name..."
+        oninput="filterOrdersByStatus()"
+      />
+      <select id="orderStatusFilter" onchange="filterOrdersByStatus()">
+        <option value="All">All Orders</option>
+        <option value="Pending">Pending</option>
+        <option value="Approved">Approved</option>
+        <option value="Out for Delivery">Out for Delivery</option>
+        <option value="Delivered">Delivered</option>
+        <option value="Rejected">Rejected</option>
+      </select>
+    </div>
+    <p id="orderCount" style="margin-top:10px;font-weight:500;"></p>
+
+    <div class="orders-wrapper" id="ordersContainer">
+        <p>Loading orders...</p>
+    </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/orders.js"></script>
+
+{% if session.role == "admin" %}
+  {% include 'admin_footer.html' %}
+{% else %}
+  {% include 'footer.html' %}
+{% endif %}
+
+</body>
+</html>

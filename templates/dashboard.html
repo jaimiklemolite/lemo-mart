@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LemoMart – Home</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+{% include 'header.html' %}
+
+<div class="body-content">
+  {% if session.role == "admin" %}
+    <div class="admin-action">
+      <button class="dashboard-btn"
+              onclick="location.href='/admin/dashboard'">
+        Admin Dashboard
+      </button>
+    </div>
+  {% endif %}
+
+  <section class="filter-bar">
+    <select id="categoryFilter" onchange="applyFilters()">
+      <option value="">All Categories</option>
+    </select>
+
+    <select id="sortFilter" onchange="applyFilters()">
+      <option value="">Sort By</option>
+      <option value="name_asc">Name (A–Z)</option>
+      <option value="name_desc">Name (Z–A)</option>
+      <option value="price_asc">Price (Low → High)</option>
+      <option value="price_desc">Price (High → Low)</option>
+    </select>
+  </section>
+
+  <hr>
+
+  <div id="products" class="product-grid"></div>
+</div> 
+
+<script>
+  window.USER_ROLE = "{{ session.role or 'guest' }}";
+</script>
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/wishlist.js"></script>
+
+{% if session.role == "admin" %}
+  {% include 'admin_footer.html' %}
+{% else %}
+  {% include 'footer.html' %}
+{% endif %}
+
+</body>
+</html>

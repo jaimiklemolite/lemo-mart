@@ -1,0 +1,93 @@
+<header class="main-header">
+
+  <!-- LEFT -->
+  <div class="header-left">
+    <div class="logo" onclick="location.href='/dashboard'">
+      Lemo<span>Mart</span>
+    </div>
+
+    <nav class="nav-links">
+      <a href="/about">About Us</a>
+      <a href="/contact">Contact Us</a>
+    </nav>
+  </div>
+
+  <!-- CENTER -->
+  <div class="header-search">
+    <input
+      id="searchInput"
+      type="text"
+      placeholder="Search products..."
+      onkeyup="applyFilters?.()"
+    >
+    <button onclick="applyFilters?.()">Search</button>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="header-right">
+
+    <!-- CART -->
+    {% if session.role != "admin" %}
+    <div class="icon-btn" onclick="location.href='/cart'" title="Cart">
+      Cart <i class="fa-solid fa-shopping-cart"></i>
+      <span id="cartCount" class="icon-count hidden">0</span>
+    </div>
+    {% endif %}
+
+    <!-- WISHLIST -->
+    {% if session.role != "admin" %}
+    <div class="icon-btn" onclick="location.href='/wishlist'" title="Wishlist">
+      WishList <i class="fa-solid fa-heart"></i>
+      <span id="wishlistCount" class="icon-count hidden">0</span>
+    </div>
+    {% endif %}
+
+    <!-- PROFILE -->
+    <div class="icon-btn profile-menu">
+      <span class="profile-icon">
+        Account <i class="fa-solid fa-caret-down"></i>
+      </span>
+
+      <div class="profile-dropdown" id="profileDropdown">
+        <a href="/profile">
+          <i class="fa-solid fa-user"></i> Profile
+        </a>
+
+        {% if session.role != "admin" %}
+        <a href="/orders">
+          <i class="fa-solid fa-truck"></i> Orders
+        </a>
+        {% endif %}
+
+        <a href="#" onclick="logout()">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </a>
+      </div>
+    </div>
+
+  </div>
+</header>
+
+<script>
+  window.USER_ROLE = "{{ session.role | lower if session.role else '' }}";
+</script>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<div id="confirmModal" class="confirm-modal hidden">
+  <div class="confirm-box">
+
+    <div class="confirm-header">
+      <h3 id="confirmTitle">Confirm Action</h3>
+      <span class="confirm-close" onclick="closeConfirm()">×</span>
+    </div>
+
+    <p id="confirmMessage">Are you sure?</p>
+
+    <div class="confirm-actions">
+      <button class="btn-cancel" onclick="closeConfirm()">No</button>
+      <button class="btn-confirm" id="confirmYesBtn">Yes</button>
+    </div>
+
+  </div>
+</div>

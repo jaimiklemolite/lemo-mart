@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+  <link rel="stylesheet" href="/static/css/login.css">
+</head>
+<body>
+
+<div class="auth-container">
+  <div class="auth-card">
+    <h2>Welcome Back</h2>
+    <p class="subtitle">Login to your account</p>
+
+    <p id="msg" class="success-msg"></p>
+
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+
+    <button onclick="login()">Login</button>
+    
+    <p class="auth-link">
+      <span onclick="goForgot()">Forgot password?</span>
+    </p>
+    
+    <p class="auth-link">
+      Don't have an account?
+      <span onclick="goSignup()">Sign up</span>
+    </p>
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+
+<script>
+function goSignup() {
+  window.location.href = "/signup";
+}
+function goForgot() {
+  window.location.href = "/forgot-password";
+}
+</script>
+
+<div id="toastContainer" class="toast-container"></div>
+
+</body>
+</html>

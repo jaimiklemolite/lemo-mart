@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Manage Products – LemoMart</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+{% include 'header.html' %}
+
+<div class="body-content">
+  <div class="admin-action">
+    <div class="admin-action-buttons">
+
+      <button class="dashboard-btn" onclick="location.href='/admin/dashboard'">
+        Admin Dashboard
+      </button>
+
+      <button class="dashboard-btn" onclick="location.href='/admin/categories'">
+        Manage Categories
+      </button>
+
+    </div>
+  </div>
+
+  <h2>Product Management</h2>
+  <hr>
+
+  <input type="hidden" id="productId">
+
+  <input id="name" placeholder="Name">
+  <input id="description" placeholder="Description">
+  <input id="price" type="number" placeholder="Price">
+  <input id="images" type="file" multiple accept="image/*" onchange="previewImages()">
+
+  <!-- CATEGORY DROPDOWN -->
+  <select id="categorySelect" name="category_id" onchange="onCategoryChange()"></select>
+
+  <div id="imagePreview" class="image-preview"></div>
+
+  <hr>
+
+  <h3>Product Specifications</h3>
+  <div id="specRows"></div>
+  <button class="product-btn" onclick="addSpecRow()">
+    + Add Spec Row
+  </button>
+
+  <h3>Product Details Sections</h3>
+  <div id="detailSections"></div>
+  <button class="product-btn" onclick="addDetailSection()">
+    + Add Detail Section
+  </button>
+
+  <hr>
+
+  <button onclick="addProduct()" class="product-btn">Add Product</button>
+  <button onclick="updateProduct()" class="product-btn">Update Product</button>
+
+  <hr>
+
+  <div id="products" class="product-grid"></div>
+</div>
+
+<script src="/static/js/app.js"></script>
+
+{% if session.role == "admin" %}
+  {% include 'admin_footer.html' %}
+{% else %}
+  {% include 'footer.html' %}
+{% endif %}
+
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Wishlists – LemoMart</title>
+
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+
+{% include 'header.html' %}
+
+<div class="body-content">
+  <h2>My Wishlist
+    <i class="fa-solid fa-heart" style="color: red;"></i>
+  </h2>
+
+  <!-- WISHLIST EMPTY STATE -->
+  <div id="wishlistEmptyState" style="display:none;">
+    <div class="empty-state">
+      <img src="/static/images/wishlist_empty.png" alt="Empty Wishlist">
+      <h3>Your wishlist is lonely and looking for love.</h3>
+      <p>
+        Add products to your wishlist, review them anytime and easily move to cart.
+      </p>
+      <button class="empty-action-btn"
+          onclick="location.href='/dashboard'">
+        Shop Now
+      </button>
+    </div>
+  </div>
+
+  <div id="products" class="product-grid"></div>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/wishlist.js"></script>
+
+{% if session.role == "admin" %}
+  {% include 'admin_footer.html' %}
+{% else %}
+  {% include 'footer.html' %}
+{% endif %}
+
+</body>
+</html>

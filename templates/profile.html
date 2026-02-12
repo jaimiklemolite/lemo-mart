@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Profile – LemoMart</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+{% include 'header.html' %}
+
+<div class="body-content">
+  <h2>My Profile</h2>
+
+  <div id="profileInfo"></div>
+
+  {% if session.role != "admin" %}
+    <hr>
+    <h3>Recent Orders</h3>
+    <div id="orderHistory"></div>
+  {% endif %}
+</div>
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/profile.js"></script>
+
+{% if session.role == "admin" %}
+  {% include 'admin_footer.html' %}
+{% else %}
+  {% include 'footer.html' %}
+{% endif %}
+
+</body>
+</html>

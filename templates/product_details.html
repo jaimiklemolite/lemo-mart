@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Product Details – LemoMart</title>
+
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body data-product-id="{{ product_id }}">
+
+{% include 'header.html' %}
+
+<div class="body-content">
+
+  <div class="product-details-layout">
+
+    <!-- LEFT : IMAGE GALLERY -->
+    <div class="product-media">
+
+      <!-- LEFT THUMBNAILS -->
+      <div id="pd-thumbs-left" class="thumbs-vertical"></div>
+
+      <!-- CENTER MAIN IMAGE -->
+      <div class="product-main-image">
+        <img id="pd-main-image" src="/static/no-image.png">
+      </div>
+
+    </div>
+
+    <!-- RIGHT : INFO -->
+    <div class="product-info">
+
+      <h1 id="pd-name">Loading...</h1>
+      <div class="product-price" id="pd-price">₹0</div>
+
+      <p id="pd-description"></p>
+
+      <p><b>Category:</b> <span id="pd-category"></span></p>
+      <div id="stockLabel" class="stock-label hidden"></div>
+
+      <!-- USER / GUEST ACTIONS -->
+      {% if session.role != "admin" %}
+      <div id="qtyWrapper" style="display:none">
+        Quantity:
+        <select id="qtySelect"></select>
+      </div>
+
+      <div class="product-actions">
+        <button id="addToCartBtn" class="add-btn cart-add" style="display:none" onclick="handleAddToCart()">
+          Add to Cart
+        </button>
+
+        <button id="goToCartBtn" class="add-btn cart-go hidden"
+                onclick="location.href='/cart'">
+          Go to Cart
+        </button>
+
+        <button class="add-btn wishlist"
+                id="pdWishlistBtn"
+                data-product-id="{{ product_id }}"
+                data-context="product-details"
+                onclick="toggleWishlist(this)">
+          <i class="fa-regular fa-heart"></i>
+          <span class="wishlist-text">Add to Wishlist</span>
+        </button>
+
+        <button id="continueBtn"
+                class="add-btn outline"
+                style="display:none"
+                onclick="location.href='/dashboard'">
+          Continue Shopping
+        </button>
+      </div>
+      {% endif %}
+
+      <!-- ADMIN ACTION -->
+      {% if session.role == "admin" %}
+      <div class="product-actions">
+        <button class="add-btn"
+                onclick="location.href='/dashboard'">
+          Go to Home
+        </button>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  <hr>
+
+  <h3>Quick Specs Table</h3>
+
+  <div id="productSpecs"></div>
+
+  <hr>
+  <div class="product-details-card">
+
+    <!-- SINGLE HEADER WITH TOGGLE -->
+    <div class="product-details-toggle" onclick="toggleMainDetails()">
+      <span>Product Details</span>
+      <i id="mainArrow" class="fa-solid fa-chevron-down"></i>
+    </div>
+
+    <!-- BODY -->
+    <div id="mainDetailsBody" class="accordion-hidden">
+      <div id="nestedDetails"></div>
+    </div>
+
+  </div>
+
+  <h3>Related Products</h3>
+  <div id="relatedProducts" class="product-grid"></div>
+
+</div>
+
+<script>
+  window.USER_ROLE = "{{ session.role or 'guest' }}";
+</script>
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/wishlist.js"></script>
+<script src="/static/js/product_details.js"></script>
+
+{% if session.role == "admin" %}
+  {% include 'admin_footer.html' %}
+{% else %}
+  {% include 'footer.html' %}
+{% endif %}
+
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Signup</title>
+  <link rel="stylesheet" href="/static/css/signup.css">
+</head>
+<body>
+
+<div class="auth-container">
+  <div class="auth-card">
+    <h2>Create Account</h2>
+    <p class="subtitle">Register to continue</p>
+
+    <input id="name" type="text" placeholder="Full Name" required>
+    <input id="email" type="email" placeholder="Email" required>
+    <input id="password" type="password" placeholder="Password" required>
+
+    <button id="signupBtn" onclick="signup()">Signup</button>
+
+    <p class="switch">
+      Already have an account?
+      <span onclick="goLogin()">Login</span>
+    </p>
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+
+<script>
+function goLogin() {
+  window.location.href = "/login";
+}
+</script>
+
+<div id="toastContainer" class="toast-container"></div>
+
+</body>
+</html>

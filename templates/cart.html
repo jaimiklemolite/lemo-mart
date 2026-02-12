@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Cart – LemoMart</title>
+
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+{% include 'header.html' %}
+
+<div class="body-content">
+  <h2 style="margin-top: 20px;">Shopping Cart
+    <i class="fa-solid fa-cart-shopping"></i>
+  </h2>
+
+  <!-- CART EMPTY STATE -->
+  <div id="cartEmptyState" style="display:none;">
+    <div class="empty-state">
+      <img src="/static/images/cart_empty.png" alt="Empty Cart">
+      <h3>Your shopping cart is empty.</h3>
+      <p>Please add something soon, carts have feelings too.</p>
+      <button class="empty-action-btn"
+          onclick="location.href='/dashboard'">
+        Continue Shopping
+      </button>
+    </div>
+  </div>
+
+  <div class="cart-layout">
+
+    <div id="cartItems" class="cart-left">
+    </div>
+
+    <div id="cartSummary" class="cart-right" style="display: none;">
+    </div>
+
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/cart.js"></script>
+
+{% if session.role == "admin" %}
+  {% include 'admin_footer.html' %}
+{% else %}
+  {% include 'footer.html' %}
+{% endif %}
+
+</body>
+</html>
