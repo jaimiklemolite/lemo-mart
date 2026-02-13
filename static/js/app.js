@@ -682,7 +682,7 @@ function applyFilters() {
   }
 
   if (cat) {
-    filtered = filtered.filter(p => p.category === cat);
+    filtered = filtered.filter(p => p.category_id === cat);
   }
 
   if (sort === "price_asc") filtered.sort((a, b) => a.price - b.price);
@@ -695,6 +695,25 @@ function applyFilters() {
     IS_ADMIN_PRODUCTS_PAGE,
     IS_DASHBOARD_PAGE && IS_ADMIN
   );
+}
+
+function loadCategoryFilter() {
+  fetch("/api/categories/with-count")
+    .then(res => res.json())
+    .then(categories => {
+      const select = document.getElementById("categoryFilter");
+      if (!select) return;
+
+      select.innerHTML = `<option value="">All Categories</option>`;
+
+      categories.forEach(c => {
+        const option = document.createElement("option");
+        option.value = c.id;
+        option.textContent = `${titleCase(c.name)} (${c.count})`;
+        select.appendChild(option);
+      });
+    })
+    .catch(() => console.error("Failed to load category filter"));
 }
 
 function addToCart(productId) {
@@ -832,6 +851,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (location.pathname !== "/wishlist") {
     loadProducts();
+    loadCategoryFilter();
   }
 });
 

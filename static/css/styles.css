@@ -1428,11 +1428,11 @@ th {
 
 .thumb-tile:hover,
 .thumb-tile.active {
-  border-color: #0071dc;
+  border: 2px solid #0071dc;
+  border-radius: 8px;
   box-shadow:
-    0 0 0 3px #fff inset,
-    0 0 0 2px #0071dc;
-  transform: scale(1.02);
+    0 0 0 2px #fff inset,
+    0 0 0 1px #0071dc;
 }
 
 .thumb-more span {

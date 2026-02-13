@@ -1,3 +1,5 @@
+import re
+
 def title_case(text):
     if not text:
         return text
@@ -12,3 +14,8 @@ def title_case(text):
             formatted.append(word[0].upper() + word[1:].lower() if len(word) > 1 else word.upper())
 
     return " ".join(formatted)
+
+def slugify(text):
+    text = text.lower()
+    text = re.sub(r'[^a-z0-9]+', '-', text)
+    return text.strip('-')

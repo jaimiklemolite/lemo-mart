@@ -43,11 +43,11 @@ def get_cart():
     cart = session.get("cart", {})
     items = []
 
-    for pid, qty in cart.items():
-        product = mongo.db.products.find_one({"_id": ObjectId(pid)})
+    for product_id, qty in cart.items():
+        product = mongo.db.products.find_one({"_id": ObjectId(product_id)})
         if product:
             items.append({
-                "product_id": pid,
+                "product_id": product_id,
                 "name": product["name"],
                 "price": product["price"],
                 "qty": qty,

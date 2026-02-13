@@ -25,8 +25,8 @@ def place_order():
 
     items = []
 
-    for pid, qty in cart.items():
-        product = mongo.db.products.find_one({"_id": ObjectId(pid)})
+    for product_id, qty in cart.items():
+        product = mongo.db.products.find_one({"_id": ObjectId(product_id)})
 
         if not product:
             return jsonify({"message": "Product not found"}), 404
@@ -36,33 +36,28 @@ def place_order():
                 "message": f"Insufficient stock for {product['name']}"
             }), 400
 
-        snapshot_url = "/static/no-image.png"
+        snapshot_url = product.get("image_url", "/static/no-image.png")
 
         if isinstance(product.get("images"), list) and product["images"]:
             original_url = product["images"][0]
-            original_path = os.path.join(
-                current_app.root_path,
-                original_url.lstrip("/")
-            )
+            original_path = os.path.join(current_app.root_path, original_url.lstrip("/"))
 
             if os.path.exists(original_path):
-                ext = os.path.splitext(original_path)[1]
-                snapshot_name = f"order_{pid}_{int(datetime.utcnow().timestamp())}{ext}"
-                snapshot_path = os.path.join(order_image_dir, snapshot_name)
+                filename = os.path.basename(original_path)
+                snapshot_path = os.path.join(order_image_dir, filename)
 
-                try:
+                if not os.path.exists(snapshot_path):
                     shutil.copyfile(original_path, snapshot_path)
-                    snapshot_url = f"/static/order_images/{snapshot_name}"
-                except Exception:
-                    snapshot_url = product.get("image_url", "/static/no-image.png")
+
+                snapshot_url = f"/static/order_images/{filename}"
 
         mongo.db.products.update_one(
-            {"_id": ObjectId(pid)},
+            {"_id": ObjectId(product_id)},
             {"$inc": {"quantity": -qty}}
         )
 
         items.append({
-            "product_id": ObjectId(pid),
+            "product_id": ObjectId(product_id),
             "name": product["name"],
             "price": product["price"],
             "qty": qty,
@@ -116,7 +111,7 @@ def update_order_status(order_id):
     STATUS_FLOW = {
         "Pending": ["Approved", "Rejected"],
         "Approved": ["Out for Delivery", "Rejected"],
-        "Out for Delivery": ["Delivered", "Rejected"],
+        "Out for Delivery": ["Delivered"],
         "Delivered": [],
         "Rejected": []
     }

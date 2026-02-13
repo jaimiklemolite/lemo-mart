@@ -70,7 +70,6 @@ function loadProductDetails(productId) {
 
         const maxVisible = 3;
 
-        /* ===== NORMAL THUMB TILES ===== */
         images.slice(0, maxVisible).forEach((img, i) => {
           const tile = document.createElement("div");
           tile.className = "thumb-tile";
@@ -82,7 +81,6 @@ function loadProductDetails(productId) {
 
           tile.appendChild(imgTag);
 
-          /* hover → preview in main image */
           tile.onmouseenter = () => {
             mainImg.src = img;
 
@@ -95,7 +93,6 @@ function loadProductDetails(productId) {
           leftBox.appendChild(tile);
         });
 
-        /* ===== +N TILE ===== */
         if (images.length > maxVisible) {
           const more = document.createElement("div");
           more.className = "thumb-tile thumb-more";
@@ -109,7 +106,6 @@ function loadProductDetails(productId) {
           more.appendChild(imgTag);
           more.appendChild(overlay);
 
-          /* hover → show 4th image preview */
           more.onmouseenter = () => {
             mainImg.src = images[maxVisible];
 
@@ -117,7 +113,6 @@ function loadProductDetails(productId) {
               .forEach(t => t.classList.remove("active"));
           };
 
-          /* click → open modal */
           more.onclick = () => viewAll.click();
 
           leftBox.appendChild(more);
@@ -125,21 +120,18 @@ function loadProductDetails(productId) {
       }
 
       if (viewAll) {
-        viewAll.style.display = images.length > 3 ? "block" : "none";
+        viewAll.style.display = images.length > 0 ? "block" : "none";
       }
 
-      if (viewAll && images.length > 3) {
+      if (viewAll) {
         viewAll.onclick = () => {
           modal.style.display = "block";
 
-          /* SET MAIN IMAGE */
           modalMain.src = images[0];
 
-          /* SET TITLE + DESC */
           document.getElementById("pd-modal-title").textContent = p.name;
           document.getElementById("pd-modal-desc").textContent = p.description;
 
-          /* BUILD THUMB GRID */
           modalThumbs.innerHTML = images.map((img, i) => `
             <img src="${img}"
                 class="${i === 0 ? "active" : ""}"

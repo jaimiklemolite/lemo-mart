@@ -3,7 +3,7 @@ from bson.objectid import ObjectId
 from bson.errors import InvalidId
 from extension import mongo
 from utils import login_required
-from routes.utils import title_case
+from routes.utils import title_case, slugify
 import os
 import uuid
 import json
@@ -33,11 +33,15 @@ def add_product():
     if not category_doc:
         return jsonify({"message": "Invalid category"}), 400
 
-    category_name = re.sub(r"[^a-zA-Z0-9_-]", "_", category_doc['name'])
+    category_name = slugify(category_doc["name"])
+    product_name = slugify(name)
 
     upload_dir = os.path.join(
         current_app.root_path,
-        "static", "uploads", category_name
+        "static",
+        "uploads",
+        category_name,
+        product_name
     )
     os.makedirs(upload_dir, exist_ok=True)
 
@@ -50,7 +54,7 @@ def add_product():
             image.save(image_path)
 
             image_urls.append(
-                f"/static/uploads/{category_doc['name']}/{filename}"
+                f"/static/uploads/{category_doc['name']}/{product_name}/{filename}"
             )
 
     if not image_urls:
@@ -107,19 +111,15 @@ def get_single_product(product_id):
 
 @product_bp.route("/<product_id>/related", methods=["GET"])
 def get_related_products(product_id):
-    try:
-        pid = ObjectId(product_id)
-    except:
-        return jsonify({"message": "Invalid product ID"}), 400
 
-    current = mongo.db.products.find_one({"_id": pid})
+    current = mongo.db.products.find_one({"_id": ObjectId(product_id)})
     if not current:
         return jsonify({"message": "Product not found"}), 404
 
     category_id = current.get("category_id")
 
     cursor = mongo.db.products.find({
-        "_id": {"$ne": pid},
+        "_id": {"$ne": ObjectId(product_id)},
         "category_id": category_id,
         "quantity": {"$gt": 0}
     }).limit(6)
@@ -150,12 +150,7 @@ def update_stock():
     if not product_id or change is None:
         return jsonify({"Message": "Invalid data"}), 400
 
-    try:
-        oid = ObjectId(product_id)
-    except:
-        return jsonify({"Message": "Invalid product ID"}), 400
-
-    product = mongo.db.products.find_one({"_id": oid})
+    product = mongo.db.products.find_one({"_id": ObjectId(product_id)})
     if not product:
         return jsonify({"Message": "Product not found"}), 404
 
@@ -166,7 +161,7 @@ def update_stock():
         new_qty = 0
 
     mongo.db.products.update_one(
-        {"_id": oid},
+        {"_id": ObjectId(product_id)},
         {"$set": {"quantity": new_qty}}
     )
 
@@ -175,15 +170,11 @@ def update_stock():
         "quantity": new_qty
     }), 200
 
-@product_bp.route("/update/<id>", methods=["PUT"])
+@product_bp.route("/update/<product_id>", methods=["PUT"])
 @login_required(role="admin")
-def update_product(id):
-    try:
-        oid = ObjectId(id)
-    except InvalidId:
-        return jsonify({"message": "Invalid product ID"}), 400
+def update_product(product_id):
 
-    product = mongo.db.products.find_one({"_id": oid})
+    product = mongo.db.products.find_one({"_id": ObjectId(product_id)})
     if not product:
         return jsonify({"message": "Product not found"}), 404
 
@@ -232,14 +223,16 @@ def update_product(id):
         if not category_doc:
             return jsonify({"message": "Category not found"}), 400
 
-        import re
-        category_name = re.sub(r"[^a-zA-Z0-9_-]", "_", category_doc["name"])
+        category_name = slugify(category_doc["name"])
+        product_name_source = name if name else product["name"]
+        product_name = slugify(product_name_source)
 
         upload_dir = os.path.join(
             current_app.root_path,
             "static",
             "uploads",
-            category_name
+            category_name,
+            product_name
         )
         os.makedirs(upload_dir, exist_ok=True)
 
@@ -250,7 +243,7 @@ def update_product(id):
             image_path = os.path.join(upload_dir, filename)
             image.save(image_path)
 
-            new_images.append(f"/static/uploads/{category_name}/{filename}")
+            new_images.append(f"/static/uploads/{category_name}/{product_name}/{filename}")
 
         update_data["images"] = new_images
         update_data["image_url"] = new_images[0]
@@ -258,36 +251,45 @@ def update_product(id):
     if not update_data:
         return jsonify({"message": "Nothing to update"}), 400
     
-    result = mongo.db.products.update_one({"_id": oid}, {"$set": update_data})
+    result = mongo.db.products.update_one({"_id": ObjectId(product_id)}, {"$set": update_data})
 
     if result.matched_count == 0:
         return jsonify({"message": "Product not found during update"}), 404
 
-    updated_product = mongo.db.products.find_one({"_id": oid})
+    updated_product = mongo.db.products.find_one({"_id": ObjectId(product_id)})
 
     updated_product["_id"] = str(updated_product["_id"])
     updated_product["category_id"] = str(updated_product.get("category_id"))
 
     return jsonify(updated_product), 200
 
-@product_bp.route("/delete/<id>", methods=["DELETE"])
+@product_bp.route("/delete/<product_id>", methods=["DELETE"])
 @login_required(role="admin")
-def delete_product(id):
-    try:
-        oid = ObjectId(id)
-    except InvalidId:
-        return jsonify({"message": "Invalid product ID"}), 400
+def delete_product(product_id):
 
-    product = mongo.db.products.find_one({"_id": oid})
+    product = mongo.db.products.find_one({"_id": ObjectId(product_id)})
     if not product:
         return jsonify({"message": "Product not found"}), 404
 
     images = product.get("images", [])
+    product_folder = None
+    category_folder = None
+
     for img in images:
         img_path = os.path.join(current_app.root_path, img.lstrip("/"))
+
         if os.path.exists(img_path):
             os.remove(img_path)
+            if not product_folder:
+                product_folder = os.path.dirname(img_path)
+                category_folder = os.path.dirname(product_folder)
 
-    mongo.db.products.delete_one({"_id": oid})
+    if product_folder and os.path.isdir(product_folder) and not os.listdir(product_folder):
+        os.rmdir(product_folder)
+
+    if category_folder and os.path.isdir(category_folder) and not os.listdir(category_folder):
+        os.rmdir(category_folder)
+
+    mongo.db.products.delete_one({"_id": ObjectId(product_id)})
 
     return jsonify({"message": "Product deleted successfully"}), 200
