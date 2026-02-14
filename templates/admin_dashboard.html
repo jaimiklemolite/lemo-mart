@@ -19,26 +19,36 @@
   </div>
 
   <h2>Admin Dashboard</h2>
-  <hr>
 
-  <h3>Registered Users</h3>
-  <div id="users"></div>
+  <div class="admin-tabs">
+    <button class="tab-btn active" onclick="openAdminTab('usersSection', this)">
+      Registered Users
+    </button>
 
-  <hr>
-  <h3>Orders</h3>
-  <select id="orderStatusFilter" onchange="filterOrdersByStatus()">
-    <option value="All">All Orders</option>
-    <option value="Pending">Pending</option>
-    <option value="Approved">Approved</option>
-    <option value="Out for Delivery">Out for Delivery</option>
-    <option value="Delivered">Delivered</option>
-    <option value="Rejected">Rejected</option>
-    <option value="Cancelled">Cancelled</option>
-  </select>
-  <p id="orderCount" style="margin-top:10px;font-weight:500;"></p>
-  <div id="adminOrders" class="admin-orders"></div>
+    <button class="tab-btn" onclick="openAdminTab('ordersSection', this)">
+      Orders
+    </button>
+  </div>
+
+  <div id="usersSection" class="admin-section">
+    <div id="users"></div>
+  </div>
+
+  <div id="ordersSection" class="admin-section hidden">
+    <select id="orderStatusFilter" onchange="filterOrdersByStatus()">
+      <option value="All">All Orders</option>
+      <option value="Pending">Pending</option>
+      <option value="Approved">Approved</option>
+      <option value="Out for Delivery">Out for Delivery</option>
+      <option value="Delivered">Delivered</option>
+      <option value="Rejected">Rejected</option>
+      <option value="Cancelled">Cancelled</option>
+    </select>
+
+    <p id="orderCount" style="margin-top:10px;font-weight:500;"></p>
+    <div id="adminOrders" class="admin-orders"></div>
+  </div>
 </div>
-
 <script src="/static/js/app.js"></script>
 <script src="/static/js/admin.js"></script>
 

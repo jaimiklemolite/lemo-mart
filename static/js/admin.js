@@ -20,6 +20,7 @@ function renderUsersTable(users) {
       <tr>
         <th>Username</th>
         <th>Email</th>
+        <th>Orders</th>
         <th>Role</th>
       </tr>
 
@@ -27,6 +28,7 @@ function renderUsersTable(users) {
         <tr>
           <td>${u.username}</td>
           <td>${u.email}</td>
+          <td><b>${u.role === "admin" ? "–" : u.order_count}</b></td>
           <td>${capitalizeFirstLetter(u.role)}</td>
         </tr>
       `).join("")}
@@ -191,8 +193,3 @@ function updateOrderStatus(orderId, status) {
     setTimeout(filterOrdersByStatus, 50);
   });
 }
-
-window.addEventListener("load", () => {
-  loadUsers();
-  loadOrders();
-});

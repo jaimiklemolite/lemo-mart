@@ -13,57 +13,104 @@
 <div class="body-content">
   <div class="admin-action">
     <div class="admin-action-buttons">
-
       <button class="dashboard-btn" onclick="location.href='/admin/dashboard'">
         Admin Dashboard
       </button>
-
-      <button class="dashboard-btn" onclick="location.href='/admin/categories'">
-        Manage Categories
-      </button>
-
     </div>
   </div>
 
-  <h2>Product Management</h2>
+  <h2>Admin Product Management</h2>
   <hr>
+  
+  <div class="admin-tabs">
 
-  <input type="hidden" id="productId">
+    <button class="tab-btn active"
+            onclick="openAdminTab('productsTab', this)">
+      Products
+    </button>
 
-  <input id="name" placeholder="Name">
-  <input id="description" placeholder="Description">
-  <input id="price" type="number" placeholder="Price">
-  <input id="images" type="file" multiple accept="image/*" onchange="previewImages()">
+    <button class="tab-btn"
+            onclick="openAdminTab('formTab', this)">
+      Add / Edit
+    </button>
 
-  <select id="categorySelect" name="category_id" onchange="onCategoryChange()"></select>
+    <button class="tab-btn"
+            onclick="openAdminTab('categoryTab', this)">
+      Categories
+    </button>
 
-  <div id="imagePreview" class="image-preview"></div>
+  </div>
 
-  <hr>
 
-  <h3>Product Specifications</h3>
-  <div id="specRows"></div>
-  <button class="product-btn" onclick="addSpecRow()">
-    + Add Spec Row
-  </button>
+  <div id="productsTab" class="admin-section">
+    <h2>Product Inventory</h2>
+    <div id="products" class="product-grid"></div>
+  </div>
 
-  <h3>Product Details Sections</h3>
-  <div id="detailSections"></div>
-  <button class="product-btn" onclick="addDetailSection()">
-    + Add Detail Section
-  </button>
+  <div id="formTab" class="admin-section hidden">
+    <h2>Create or Update Product</h2>
+    <input type="hidden" id="productId">
 
-  <hr>
+    <input id="name" placeholder="Name">
+    <input id="description" placeholder="Description">
+    <input id="price" type="number" placeholder="Price">
+    <input id="images" type="file" multiple accept="image/*" onchange="previewImages()">
 
-  <button onclick="addProduct()" class="product-btn">Add Product</button>
-  <button onclick="updateProduct()" class="product-btn">Update Product</button>
+    <select id="categorySelect" name="category_id"></select>
 
-  <hr>
+    <div id="imagePreview" class="image-preview"></div>
 
-  <div id="products" class="product-grid"></div>
+    <hr>
+
+    <h3>Product Specifications</h3>
+    <div id="specRows"></div>
+    <button class="product-btn" onclick="addSpecRow()">
+      + Add Spec Row
+    </button>
+
+    <h3>Product Details Sections</h3>
+    <div id="detailSections"></div>
+    <button class="product-btn" onclick="addDetailSection()">
+      + Add Detail Section
+    </button>
+
+    <hr>
+
+    <button onclick="addProduct()" class="product-btn">Add Product</button>
+    <button onclick="updateProduct()" class="product-btn">Update Product</button>
+
+  </div>
+
+  <div id="categoryTab" class="admin-section hidden">
+    <h2>Category Management</h2>
+
+    <input id="category" placeholder="Category">
+    <button id="categorySubmitBtn"
+            onclick="submitCategory()"
+            class="product-btn">
+      Add Category
+    </button>
+
+    <h3>Default Spec Names</h3>
+    <div id="specNameList"></div>
+    <button onclick="addSpecName()" class="product-btn">
+      + Add Spec Name
+    </button>
+
+    <h3>Default Detail Section Titles</h3>
+    <div id="detailTitleList"></div>
+    <button onclick="addDetailTitle()" class="product-btn">
+      + Add Section Title
+    </button>
+
+    <div id="categoryGrid" class="category-grid"></div>
+
+  </div>
+
 </div>
 
 <script src="/static/js/app.js"></script>
+<script src="/static/js/categories.js"></script>
 
 {% if session.role == "admin" %}
   {% include 'admin_footer.html' %}

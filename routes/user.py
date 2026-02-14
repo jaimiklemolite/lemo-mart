@@ -100,11 +100,17 @@ def get_all_users():
     users = []
 
     for user in mongo.db.users.find({}):
+
+        order_count = mongo.db.orders.count_documents({
+            "user_id": user["_id"]
+        })
+
         users.append({
-            "id": str(user["_id"]),
+            "id": user["_id"],
             "username": user.get("username"),
             "email": user["email"],
-            "role": user["role"]
+            "role": user["role"],
+            "order_count": order_count
         })
 
     return jsonify({"users": users}), 200

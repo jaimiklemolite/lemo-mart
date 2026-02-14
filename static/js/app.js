@@ -50,8 +50,15 @@ function login() {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ product_id: pendingCart })
-      }).finally(() => {
+      })
+      .then(async res => {
         localStorage.removeItem("pendingCartProduct");
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          showToast(data.message || "Cannot add to cart", "error", 3000, true);
+          window.location.href = "/dashboard";
+          return;
+        }
         showToast("Product Added To Your Cart Successfully.", "success", 3000, true);
         window.location.href = "/cart";
       });
@@ -420,6 +427,7 @@ async function editProductById(productId) {
     console.error("Template load error:", err);
     showToast("Failed to load latest category template", "error");
   }
+  openAdminTab("formTab");
 }
 
 function loadCategoryDropdown() {
@@ -544,6 +552,7 @@ function addProduct() {
       showToast("Product Added Successfully", "success");
       clearForm();
       loadProducts(true);
+      openAdminTab("productsTab");
     })
     .catch(() => showToast("Server Error While Adding Product", "error"));
 }
@@ -593,6 +602,7 @@ function updateProduct() {
       showToast("Product Updated Successfully", "success");
       clearForm();
       loadProducts(true);
+      openAdminTab("productsTab");
     })
     .catch(() => {
       showToast("Server Error While Updating Product", "error");
@@ -723,7 +733,7 @@ function addToCart(productId) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ product_id: productId })
   })
-  .then(res => {
+  .then(async res => {
     if (res.status === 401) {
       showConfirm(
         "Login Required",
@@ -734,6 +744,11 @@ function addToCart(productId) {
           window.location.href = "/login";
         }
       );
+      return;
+    }
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.message || "Cannot add to cart", "error");
       return;
     }
     showToast("Product Added To Your Cart Successfully.", "success");
@@ -838,22 +853,6 @@ function clearDetails() {
   const container = document.getElementById("detailSections");
   if (container) container.innerHTML = "";
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-  loadProfileDropdown();
-  handleHeaderIconsVisibility();
-  updateCartCount();
-  updateWishlistCount();
-  
-  if (IS_ADMIN_PRODUCTS_PAGE) {
-    loadCategoryDropdown();
-  }
-
-  if (location.pathname !== "/wishlist") {
-    loadProducts();
-    loadCategoryFilter();
-  }
-});
 
 function addSpecRow(name = "", value = "", readonly = false, isDefault = false) {
   const container = document.getElementById("specRows");
@@ -1041,4 +1040,61 @@ function closeConfirm() {
 document.getElementById("confirmYesBtn")?.addEventListener("click", () => {
   if (confirmCallback) confirmCallback();
   closeConfirm();
+});
+
+function openAdminTab(sectionId, btn) {
+
+  document.querySelectorAll(".admin-section")
+    .forEach(sec => sec.classList.add("hidden"));
+
+  document.querySelectorAll(".tab-btn")
+    .forEach(tab => tab.classList.remove("active"));
+
+  const section = document.getElementById(sectionId);
+  if (section) section.classList.remove("hidden");
+
+  if (!btn) {
+    btn = document.querySelector(`.tab-btn[onclick*="${sectionId}"]`);
+  }
+
+  if (btn) btn.classList.add("active");
+
+  if (sectionId === "usersSection" && !cachedUsers.length) {
+    loadUsers();
+  }
+
+  if (sectionId === "ordersSection" && !cachedOrders.length) {
+    loadOrders();
+  }
+}
+
+function getTabFromURL(defaultTab) {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("tab") || defaultTab;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadProfileDropdown();
+  handleHeaderIconsVisibility();
+  updateCartCount();
+  updateWishlistCount();
+  
+  if (IS_ADMIN_PRODUCTS_PAGE) {
+    loadCategoryDropdown();
+  }
+
+  if (location.pathname === "/admin/dashboard") {
+    const tab = getTabFromURL("usersSection");
+    openAdminTab(tab);
+  }
+
+  if (location.pathname !== "/wishlist") {
+    loadProducts();
+    loadCategoryFilter();
+  }
+
+  if (location.pathname.startsWith("/admin/products")) {
+    const tab = getTabFromURL("productsTab");
+    openAdminTab(tab);
+  }
 });

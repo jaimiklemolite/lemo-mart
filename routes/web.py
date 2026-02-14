@@ -64,8 +64,3 @@ def admin_dashboard():
 @login_required(role="admin")
 def admin_products():
     return render_template("products.html")
-
-@web_bp.route("/admin/categories")
-@login_required(role="admin")
-def admin_categories():
-    return render_template("admin_categories.html")
