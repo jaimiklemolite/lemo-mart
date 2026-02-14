@@ -1066,6 +1066,9 @@ function openAdminTab(sectionId, btn) {
   if (sectionId === "ordersSection" && !cachedOrders.length) {
     loadOrders();
   }
+  if (sectionId === "analyticsSection") {
+    loadAnalyticsDashboard();
+  }
 }
 
 function getTabFromURL(defaultTab) {
