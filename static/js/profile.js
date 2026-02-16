@@ -18,7 +18,6 @@ fetch("/api/users/profile", {
     profileInfo.innerHTML = `
       <p><b>Username:</b> ${user.username || "-"}</p>
       <p><b>Email:</b> ${user.email}</p>
-      <p><b>Role:</b> ${capitalizeFirstLetter(user.role)}</p>
     `;
   }
 
@@ -45,7 +44,7 @@ fetch("/api/users/profile", {
     <div class="order-card">
 
       <div class="order-header">
-        <span><b>Order ID:</b> ${order.id}</span>
+        <span><b>Order ID:</b> ${order.order_number}</span>
 
         <span class="order-status ${order.status.toLowerCase().replace(/ /g, "-")}">
           ${order.status}
@@ -61,8 +60,3 @@ fetch("/api/users/profile", {
     </div>
   `).join("");
 });
-
-function capitalizeFirstLetter(str) {
-  if (!str) return "";
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}

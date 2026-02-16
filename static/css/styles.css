@@ -518,7 +518,7 @@ select:focus {
 }
 
 .slider-image {
-  height: 100%;
+  height: 90%;
   background-size: cover;
   background-position: center;
   border-radius: 10px;

@@ -86,7 +86,7 @@ function renderOrders(container, orders) {
       <div class="order-group ${statusClass}">
 
         <div class="order-header">
-          <span><b>Order ID:</b> ${order.id}</span>
+          <span><b>Order ID:</b> ${order.order_number}</span>
           <span class="order-status">${order.status}</span>
         </div>
 

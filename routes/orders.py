@@ -11,10 +11,12 @@ order_bp = Blueprint("orders", __name__, url_prefix="/api/orders")
 @login_required()
 def place_order():
     user_id = ObjectId(session.get("user_id"))
-    cart = session.get("cart", {})
+    cart_doc = mongo.db.carts.find_one({"user_id": user_id})
 
-    if not cart:
+    if not cart_doc or not cart_doc.get("items"):
         return jsonify({"message": "Cart empty"}), 400
+
+    cart_items = cart_doc["items"]
 
     order_image_dir = os.path.join(
         current_app.root_path,
@@ -25,7 +27,9 @@ def place_order():
 
     items = []
 
-    for product_id, qty in cart.items():
+    for item in cart_items:
+        product_id = str(item["product_id"])
+        qty = item["qty"]
         product = mongo.db.products.find_one({"_id": ObjectId(product_id)})
 
         if not product:
@@ -65,9 +69,20 @@ def place_order():
         })
 
     now = datetime.utcnow()
-    ts = int(now.timestamp())
+    year = now.year
+    month = now.month
+
+    count = mongo.db.orders.count_documents({
+        "created_at": {
+            "$gte": datetime(year, month, 1),
+            "$lt": datetime(year + (month // 12), (month % 12) + 1, 1)
+        }
+    })
+
+    order_number = f"ORD-{year}-{month:02d}-{count + 1:06d}"
 
     mongo.db.orders.insert_one({
+        "order_number": order_number,
         "user_id": user_id,
         "items": items,
         "status": "Pending",
@@ -77,10 +92,9 @@ def place_order():
         "cancelled_at": None,
     })
 
-    session["cart"] = {}
-    session.modified = True
+    mongo.db.carts.delete_one({"user_id": user_id})
 
-    return jsonify({"items": items}), 200
+    return jsonify({"order_number": order_number, "items": items}), 200
 
 @order_bp.route("/all", methods=["GET"])
 @login_required(role="admin")
@@ -94,6 +108,7 @@ def get_all_orders():
 
         orders.append({
             "id": str(o["_id"]),
+            "order_number": o.get("order_number", str(o["_id"])),
             "username": user.get("username", "Unknown") if user else "Unknown",
             "customer_email": user.get("email", "Unknown") if user else "Unknown",
             "items": o.get("items", []),

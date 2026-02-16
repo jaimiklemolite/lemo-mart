@@ -17,19 +17,42 @@ def add_to_cart():
         return jsonify({"error": "Out of stock"}), 400
 
     stock = product.get("quantity", 0)
+    user_id = ObjectId(session.get("user_id"))
 
-    cart = session.get("cart", {})
-    existing_qty = cart.get(product_id, 0)
+    cart = mongo.db.carts.find_one({"user_id": user_id})
 
-    new_qty = existing_qty + qty
+    if not cart:
+        qty = min(qty, stock)
 
-    if new_qty > stock:
-        new_qty = stock
+        mongo.db.carts.insert_one({
+            "user_id": user_id,
+            "items": [{"product_id": ObjectId(product_id), "qty": qty}]
+        })
 
-    cart[product_id] = new_qty
+        return jsonify({
+            "product_id": product_id,
+            "qty": qty,
+            "stock": stock
+        }), 200
 
-    session["cart"] = cart
-    session.modified = True
+    items = cart.get("items", [])
+    found = False
+
+    for item in items:
+        if item["product_id"] == ObjectId(product_id):
+            item["qty"] = min(item["qty"] + qty, stock)
+            new_qty = item["qty"]
+            found = True
+            break
+
+    if not found:
+        new_qty = min(qty, stock)
+        items.append({"product_id": ObjectId(product_id), "qty": new_qty})
+
+    mongo.db.carts.update_one(
+        {"user_id": user_id},
+        {"$set": {"items": items}}
+    )
 
     return jsonify({
         "product_id": product_id,
@@ -40,10 +63,18 @@ def add_to_cart():
 @cart_bp.route("/", methods=["GET"])
 @login_required()
 def get_cart():
-    cart = session.get("cart", {})
+    user_id = ObjectId(session.get("user_id"))
+    cart = mongo.db.carts.find_one({"user_id": user_id})
+
+    if not cart:
+        return jsonify({"items": []}), 200
+
     items = []
 
-    for product_id, qty in cart.items():
+    for item in cart.get("items", []):
+        product_id = str(item["product_id"])
+        qty = item["qty"]
+
         product = mongo.db.products.find_one({"_id": ObjectId(product_id)})
         if product:
             items.append({
@@ -72,15 +103,19 @@ def update_cart_qty():
         return jsonify({"error": "Product not found"}), 404
 
     stock = product.get("quantity", 0)
+    qty = min(qty, stock)
 
-    if qty > stock:
-        qty = stock
+    user_id = ObjectId(session.get("user_id"))
 
-    cart = session.get("cart", {})
-    cart[product_id] = qty
-
-    session["cart"] = cart
-    session.modified = True
+    mongo.db.carts.update_one(
+        {
+            "user_id": user_id,
+            "items.product_id": ObjectId(product_id)
+        },
+        {
+            "$set": {"items.$.qty": qty}
+        }
+    )
 
     return jsonify({
         "product_id": product_id,
@@ -90,32 +125,46 @@ def update_cart_qty():
 
 @cart_bp.route("/decrease/<product_id>", methods=["PUT"])
 @login_required()
-def decreaseQty(product_id):
-    cart = session.get("cart", {})
+def decrease_qty(product_id):
+    user_id = ObjectId(session.get("user_id"))
 
-    if product_id not in cart:
-        return jsonify({"message": "Item not in cart"}), 404
+    cart = mongo.db.carts.find_one({"user_id": user_id})
+    if not cart:
+        return jsonify({"message": "Cart not found"}), 404
 
-    cart[product_id] -= 1
-    if cart[product_id] <= 0:
-        cart.pop(product_id)
+    items = cart.get("items", [])
+    updated_items = []
 
-    session["cart"] = cart
-    session.modified = True
+    new_qty = 0
+
+    for item in items:
+        if str(item["product_id"]) == product_id:
+            if item["qty"] > 1:
+                item["qty"] -= 1
+                new_qty = item["qty"]
+                updated_items.append(item)
+        else:
+            updated_items.append(item)
+
+    mongo.db.carts.update_one(
+        {"user_id": user_id},
+        {"$set": {"items": updated_items}}
+    )
 
     return jsonify({
         "product_id": product_id,
-        "qty": cart.get(product_id, 0)
+        "qty": new_qty
     }), 200
 
 @cart_bp.route("/remove/<product_id>", methods=["DELETE"])
 @login_required()
 def remove_from_cart(product_id):
-    cart = session.get("cart", {})
-    cart.pop(product_id, None)
+    user_id = ObjectId(session.get("user_id"))
 
-    session["cart"] = cart
-    session.modified = True
+    mongo.db.carts.update_one(
+        {"user_id": user_id},
+        {"$pull": {"items": {"product_id": ObjectId(product_id)}}}
+    )
 
     return jsonify({
         "product_id": product_id,

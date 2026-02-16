@@ -83,6 +83,7 @@ def profile():
     for o in mongo.db.orders.find({"user_id": ObjectId(user_id)}):
         orders.append({
             "id": str(o["_id"]),
+            "order_number": o.get("order_number", str(o["_id"])),
             "status": o["status"],
             "items": o["items"],
         })

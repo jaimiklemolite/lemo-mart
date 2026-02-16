@@ -55,6 +55,11 @@ function loadSalesChart() {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
+            title: {
+              display: true,
+              text: "Revenue Trend (Last Days)",
+              font: { size: 16, weight: "bold" }
+            },
             legend: { display: true }
           },
           scales: {
@@ -92,7 +97,12 @@ function loadTopProductsChart() {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: true }
+            title: {
+              display: true,
+              text: "Top Selling Products",
+              font: { size: 16, weight: "bold" }
+            },
+            legend: { display: false }
           },
           scales: {
             y: {
@@ -128,10 +138,15 @@ function loadCategoryChart() {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
+            title: {
+              display: true,
+              text: "Revenue Distribution by Category",
+              font: { size: 16, weight: "bold" }
+            },
             legend: {
               position: "top"
             }
-          }
+          },
         }
       });
     })

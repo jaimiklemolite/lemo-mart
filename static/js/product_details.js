@@ -1,15 +1,3 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const productId = document.body.dataset.productId;
-
-  if (!productId) {
-    console.error("❌ Product ID missing in body dataset");
-    return;
-  }
-
-  loadProductDetails(productId);
-  loadRelatedProducts(productId);
-});
-
 let CURRENT_STOCK = 0;
 
 function titleCase(str) {
@@ -396,3 +384,15 @@ function toggleNested(index) {
   arrow.textContent =
     body.classList.contains("accordion-hidden") ? "▶" : "▼";
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  const productId = document.body.dataset.productId;
+
+  if (!productId) {
+    console.error("❌ Product ID missing in body dataset");
+    return;
+  }
+
+  loadProductDetails(productId);
+  loadRelatedProducts(productId);
+});

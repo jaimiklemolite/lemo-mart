@@ -75,7 +75,7 @@ function renderOrders(orders) {
 
       <div class="admin-order-left">
         <div class="admin-order-meta">
-          <p><strong>Order ID:</strong> ${order.id}</p>
+          <p><strong>Order ID:</strong> ${order.order_number}</p>
           <p><strong>Username:</strong> ${order.username}</p>
           <p><strong>Customer Email:</strong> ${order.customer_email}</p>
         </div>
