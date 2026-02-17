@@ -16,6 +16,10 @@ function loadCategories() {
 
       container.innerHTML = categories.map(c => `
         <div class="category-card">
+          <button class="info-btn"
+                  onclick="showCategoryInfo('${c.id}')">
+            <i class="fa-solid fa-circle-info"></i>
+          </button>
           <button class="edit-btn"
                   onclick="editCategory('${c.id}')">
             <i class="fa-solid fa-pen"></i>
@@ -32,6 +36,99 @@ function loadCategories() {
       `).join("");
     })
     .catch(() => showToast("Failed To Load Categories", "error"));
+}
+
+let ordersIndex = 0;
+let salesIndex = 0;
+let ordersData = [];
+let salesData = [];
+
+async function showCategoryInfo(categoryId) {
+  try {
+    const res = await fetch(`/api/categories/${categoryId}/summary`, {
+      credentials: "include"
+    });
+
+    if (!res.ok) throw new Error("Request failed");
+
+    const data = await res.json();
+
+    document.getElementById("infoCategoryTitle").innerText =
+      titleCase(data.name || "Category");
+
+    const productCount = data.product_count || 0;
+    const statusEl = document.getElementById("infoStatus");
+
+    if (productCount === 0) {
+      statusEl.innerText = "Not Active";
+      statusEl.className = "status red";
+    } else {
+      statusEl.innerText = "Active";
+      statusEl.className = "status green";
+    }
+
+    document.getElementById("infoProductCount").innerText = productCount;
+
+    ordersData = [
+      { label: "Total Orders", value: data.total_orders || 0 },
+      { label: "Delivered Orders", value: data.delivered_orders || 0 }
+    ];
+
+    salesData = [
+      { label: "Total Sold Qty", value: data.total_sold_qty || 0 },
+      { label: "Revenue", value: `₹ ${data.revenue || 0}` }
+    ];
+
+    ordersIndex = 0;
+    salesIndex = 0;
+
+    slideOrders(0);
+    slideSales(0);
+
+    const specList = document.getElementById("infoSpecList");
+    specList.innerHTML =
+      (data.spec_names || []).map(s => `<li>${s}</li>`).join("") ||
+      "<li>No default specs</li>";
+
+    const detailList = document.getElementById("infoDetailList");
+    detailList.innerHTML =
+      (data.detail_titles || []).map(d => `<li>${d}</li>`).join("") ||
+      "<li>No detail sections</li>";
+
+    document.getElementById("categoryInfoModal").classList.remove("hidden");
+
+  } catch (err) {
+    console.error("Category info load error:", err);
+    showToast("Failed to load category info", "error");
+  }
+}
+
+function closeCategoryInfo() {
+  document.getElementById("categoryInfoModal").classList.add("hidden");
+}
+
+function slideOrders(dir) {
+  if (!ordersData.length) return;
+
+  ordersIndex = (ordersIndex + dir + ordersData.length) % ordersData.length;
+
+  document.getElementById("ordersLabel").innerText =
+    ordersData[ordersIndex].label;
+
+  document.getElementById("ordersValue").innerText =
+    ordersData[ordersIndex].value;
+}
+
+function slideSales(dir) {
+  if (!salesData.length) return;
+
+  salesIndex = (salesIndex + dir + salesData.length) % salesData.length;
+
+  document.getElementById("salesLabel").innerText =
+    salesData[salesIndex].label;
+
+  document.getElementById("salesValue").innerText =
+    salesData[salesIndex].value;
 }
 
 function submitCategory() {

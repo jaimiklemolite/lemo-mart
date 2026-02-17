@@ -59,6 +59,21 @@
   </div>
 
   <div id="analyticsSection" class="admin-section hidden">
+    <div class="analytics-filter">
+
+      <select id="rangeSelect" onchange="onRangeChange()">
+        <option value="1">Today</option>
+        <option value="7">Last 7 Days</option>
+        <option value="30">Last 30 Days</option>
+        <option value="90">Last 3 Months</option>
+        <option value="365">Last 1 Year</option>
+        <option value="custom">Custom Range</option>
+      </select>
+
+      <input type="date" id="startDate" onchange="onCustomDateChange()" hidden>
+      <input type="date" id="endDate" onchange="onCustomDateChange()" hidden>
+
+    </div>
 
     <div id="summaryCards" class="analytics-cards"></div>
     <hr>

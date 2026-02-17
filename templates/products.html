@@ -102,6 +102,66 @@
     <button onclick="addDetailTitle()" class="product-btn">
       + Add Section Title
     </button>
+    
+    <div id="categoryInfoModal" class="modal hidden">
+
+      <div class="modal-box">
+
+        <div class="modal-head">
+          <h3 id="infoCategoryTitle">Category</h3>
+          <button onclick="closeCategoryInfo()">✕</button>
+        </div>
+
+        <div class="modal-stats">
+          <div class="stat-card">
+            <span>Status</span>
+            <b id="infoStatus">Active</b>
+          </div>
+
+          <div class="stat-card">
+            <span>Products</span>
+            <b id="infoProductCount">0</b>
+          </div>
+        </div>
+
+        <div class="modal-grid">
+
+          <div class="card slider-card">
+            <button class="slide-btn left" onclick="slideOrders(-1)">‹</button>
+
+            <div class="slide-content">
+              <span id="ordersLabel">Total Orders</span>
+              <b id="ordersValue">0</b>
+            </div>
+
+            <button class="slide-btn right" onclick="slideOrders(1)">›</button>
+          </div>
+
+          <div class="card slider-card">
+            <button class="slide-btn left" onclick="slideSales(-1)">‹</button>
+
+            <div class="slide-content">
+              <span id="salesLabel">Total Sold Qty</span>
+              <b id="salesValue">0</b>
+            </div>
+
+            <button class="slide-btn right" onclick="slideSales(1)">›</button>
+          </div>
+
+          <div class="card">
+            <h4>Default Specification Names</h4>
+            <ul id="infoSpecList"></ul>
+          </div>
+
+          <div class="card">
+            <h4>Default Detail Section Titles</h4>
+            <ul id="infoDetailList"></ul>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
 
     <div id="categoryGrid" class="category-grid"></div>
 

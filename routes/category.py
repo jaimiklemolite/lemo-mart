@@ -66,6 +66,66 @@ def get_categories():
         })
     return jsonify(categories), 200
 
+@category_bp.route("/<category_id>/summary", methods=["GET"])
+@login_required(role="admin")
+def category_summary(category_id):
+    try:
+        oid = ObjectId(category_id)
+    except:
+        return jsonify({"message": "Invalid category id"}), 400
+
+    category = mongo.db.category.find_one({"_id": oid})
+    if not category:
+        return jsonify({"message": "Category not found"}), 404
+
+    products = list(mongo.db.products.find({"category_id": oid}))
+    product_ids = [p["_id"] for p in products]
+    product_count = len(products)
+
+    total_orders = 0
+    delivered_orders = 0
+    total_sold_qty = 0
+    revenue = 0
+
+    if product_ids:
+        orders_cursor = mongo.db.orders.find({
+            "items.product_id": {"$in": product_ids}
+        })
+
+        for order in orders_cursor:
+            matched = False
+            delivered_matched = False
+
+            for item in order.get("items", []):
+                if item.get("product_id") in product_ids:
+                    matched = True
+
+                    # count sold only if order delivered
+                    if order.get("status") == "Delivered":
+                        delivered_matched = True
+                        qty = item.get("qty", 0)
+                        price = item.get("price", 0)
+
+                        total_sold_qty += qty
+                        revenue += price * qty
+
+            if matched:
+                total_orders += 1
+
+            if delivered_matched:
+                delivered_orders += 1
+
+    return jsonify({
+        "name": category.get("name"),
+        "spec_names": category.get("spec_names", []),
+        "detail_titles": category.get("detail_titles", []),
+        "product_count": product_count,
+        "total_orders": total_orders,
+        "delivered_orders": delivered_orders,
+        "total_sold_qty": total_sold_qty,
+        "revenue": revenue
+    }), 200
+
 @category_bp.route("/with-count", methods=["GET"])
 def get_categories_with_count():
     pipeline = [

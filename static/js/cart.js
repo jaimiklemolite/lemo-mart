@@ -66,6 +66,10 @@ function loadCart() {
               onclick="removeFromCart('${item.product_id}')">
               Remove
             </button>
+            <button class="remove-btn"
+                    onclick="moveToWishlist('${item.product_id}')">
+              Move to Wishlist
+            </button>
           </div>
         `;
       }).join("");
@@ -98,6 +102,41 @@ function loadCart() {
         </button>
       `;
     });
+}
+
+function moveToWishlist(productId) {
+  showConfirm(
+    "Move Item To Wishlist",
+    "Are you sure you want to remove the product from the cart and add to wishlist?",
+    async () => {
+
+      try {
+        const removeRes = await fetch(`/api/cart/remove/${productId}`, {
+          method: "DELETE",
+          credentials: "include"
+        });
+
+        if (!removeRes.ok) throw new Error();
+
+        const wishRes = await fetch(`/api/users/wishlist/add/${productId}`, {
+          method: "POST",
+          credentials: "include"
+        });
+
+        if (!wishRes.ok) throw new Error();
+
+        await loadCart();
+        updateCartCount();
+        updateWishlistCount();
+
+        showToast("Product Moved To Wishlist Successfully", "success");
+
+      } catch (err) {
+        showToast("Failed To Move Item To Wishlist", "error");
+      }
+
+    }
+  );
 }
 
 function increaseQty(productId, currentQty, stock) {

@@ -2,6 +2,7 @@ const IS_ADMIN = window.USER_ROLE === "admin";
 const IS_ADMIN_PRODUCTS_PAGE = location.pathname.startsWith("/admin");
 const IS_DASHBOARD_PAGE = location.pathname === "/dashboard";
 
+// UTILITIES
 function titleCase(str) {
   if (!str) return "";
   return str
@@ -11,6 +12,69 @@ function titleCase(str) {
     .join(" ");
 }
 
+function showToast(message, type = "info", duration = 3000, persist = false) {
+  if (persist) {
+    sessionStorage.setItem(
+      "redirectToast",
+      JSON.stringify({ message, type, duration })
+    );
+    return;
+  }
+
+  const container = document.getElementById("toastContainer");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.innerText = message;
+
+  container.appendChild(toast);
+
+  setTimeout(() => toast.classList.add("show"), 10);
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const stored = sessionStorage.getItem("redirectToast");
+
+  if (stored) {
+    sessionStorage.removeItem("redirectToast");
+
+    const { message, type, duration } = JSON.parse(stored);
+
+    setTimeout(() => {
+      showToast(message, type, duration);
+    }, 200);
+  }
+});
+
+let confirmCallback = null;
+
+function showConfirm(title, message, onYes) {
+  const modal = document.getElementById("confirmModal");
+  document.getElementById("confirmTitle").innerText = title;
+  document.getElementById("confirmMessage").innerText = message;
+
+  confirmCallback = onYes;
+
+  modal.classList.remove("hidden");
+}
+
+function closeConfirm() {
+  document.getElementById("confirmModal").classList.add("hidden");
+  confirmCallback = null;
+}
+
+document.getElementById("confirmYesBtn")?.addEventListener("click", () => {
+  if (confirmCallback) confirmCallback();
+  closeConfirm();
+});
+
+// AUTH MODULE
 function login() {
   const emailVal = document.getElementById("email").value.trim();
   const passwordVal = document.getElementById("password").value.trim();
@@ -82,6 +146,20 @@ function login() {
   });
 }
 
+function logout() {
+  document
+    .querySelectorAll(".icon-btn")
+    .forEach(el => el.classList.remove("show"));
+
+  fetch("/api/users/logout", {
+    method: "POST",
+    credentials: "include"
+  }).finally(() => {
+    showToast("Logout Successful", "success", 3000, true);
+    window.location.href = "/";
+  });
+}
+
 function signup() {
   const nameVal = document.getElementById("name").value.trim();
   const emailVal = document.getElementById("email").value.trim();
@@ -105,20 +183,6 @@ function signup() {
   .then(() => {
     showToast("Registered Successfully. Please Login.", "success", 3000, true);
     window.location.href = "/login";
-  });
-}
-
-function logout() {
-  document
-    .querySelectorAll(".icon-btn")
-    .forEach(el => el.classList.remove("show"));
-
-  fetch("/api/users/logout", {
-    method: "POST",
-    credentials: "include"
-  }).finally(() => {
-    showToast("Logout Successful", "success", 3000, true);
-    window.location.href = "/";
   });
 }
 
@@ -190,19 +254,6 @@ function loadProfileDropdown() {
     });
 }
 
-document.addEventListener("click", (e) => {
-  const menu = document.querySelector(".profile-menu");
-  const dropdown = document.getElementById("profileDropdown");
-
-  if (!menu || !dropdown) return;
-
-  if (menu.contains(e.target)) {
-    dropdown.classList.toggle("open");
-  } else {
-    dropdown.classList.remove("open");
-  }
-});
-
 function handleHeaderIconsVisibility() {
   const cartBtn = document.querySelector(".icon-btn[title='Cart']");
   const wishBtn = document.querySelector(".icon-btn[title='Wishlist']");
@@ -225,6 +276,20 @@ function handleHeaderIconsVisibility() {
     .catch(() => {});
 }
 
+document.addEventListener("click", (e) => {
+  const menu = document.querySelector(".profile-menu");
+  const dropdown = document.getElementById("profileDropdown");
+
+  if (!menu || !dropdown) return;
+
+  if (menu.contains(e.target)) {
+    dropdown.classList.toggle("open");
+  } else {
+    dropdown.classList.remove("open");
+  }
+});
+
+// PRODUCTS MODULE
 let productCache = [];
 const imageIndexMap = {};
 
@@ -326,12 +391,21 @@ function renderProducts(list, showAdmin = false, isAdminView = false) {
                 : (
                     isAdminView
                       ? ``
-                      : `
-                        <button class="add-to-cart"
-                          onclick="addToCart('${p._id}')">
-                          Add to Cart
-                        </button>
-                      `
+                      : (
+                          location.pathname === "/wishlist"
+                            ? `
+                              <button class="move-to-cart"
+                                onclick="moveToCart('${p._id}')">
+                                Move to Cart
+                              </button>
+                            `
+                            : `
+                              <button class="add-to-cart"
+                                onclick="addToCart('${p._id}')">
+                                Add to Cart
+                              </button>
+                            `
+                        )
                   )
             }
           </div>
@@ -428,75 +502,6 @@ async function editProductById(productId) {
     showToast("Failed to load latest category template", "error");
   }
   openAdminTab("formTab");
-}
-
-function loadCategoryDropdown() {
-  fetch("/api/categories")
-    .then(res => res.json())
-    .then(categories => {
-      const select = document.getElementById("categorySelect");
-      if (!select) return;
-
-      select.innerHTML = `<option value="">Select Category</option>`;
-
-      categories.forEach(c => {
-        select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-      });
-
-      select.addEventListener("change", async () => {
-        const categoryId = select.value;
-        if (!categoryId) {
-          clearSpecs();
-          clearDetails();
-          return;
-        }
-        try {
-          const res = await fetch(`/api/categories/${categoryId}/template`, {
-            credentials: "include"
-          });
-
-          const template = await res.json();
-          clearSpecs();
-          clearDetails();
-          loadSpecsFromTemplate(template.spec_names || []);
-          loadDetailsFromTemplate(template.detail_titles || []);
-        } catch (err) {
-          showToast("Failed To Load Category Template", "error");
-        }
-      });
-    });
-}
-
-function loadCategoryTemplate(categoryId) {
-  if (!categoryId) return;
-
-  return fetch(`/api/categories/${categoryId}/template`, { credentials: "include" })
-    .then(res => res.json())
-    .then(template => {
-      loadSpecsFromTemplate(template.spec_names || []);
-      loadDetailsFromTemplate(template.detail_titles || []);
-    })
-    .catch(() => showToast("Failed To Load Category Template", "error"));
-}
-
-function loadSpecsFromTemplate(specNames) {
-  const container = document.getElementById("specRows");
-  container.innerHTML = "";
-
-  specNames.forEach(name => {
-    addSpecRow(name, "", true, true);
-  });
-}
-
-function loadDetailsFromTemplate(detailTitles) {
-  const container = document.getElementById("detailSections");
-  if (!container) return;
-
-  container.innerHTML = "";
-
-  detailTitles.forEach(title => {
-    addDetailSection(title, [], true, true);
-  });
 }
 
 function addProduct() {
@@ -609,39 +614,6 @@ function updateProduct() {
     });
 }
 
-function validateImages(files) {
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-  const maxSize = 7 * 1024 * 1024;
-
-  for (let file of files) {
-    if (!allowedTypes.includes(file.type)) {
-      showToast("Only JPG, PNG, WEBP images Allowed", "info");
-      return false;
-    }
-    if (file.size > maxSize) {
-      showToast("Each Image Must Be Under 7MB", "info");
-      return false;
-    }
-  }
-  return true;
-}
-
-function previewImages() {
-  const preview = document.getElementById("imagePreview");
-  const files = document.getElementById("images").files;
-
-  preview.innerHTML = "";
-
-  Array.from(files).forEach(file => {
-    const img = document.createElement("img");
-    img.src = URL.createObjectURL(file);
-    img.style.width = "80px";
-    img.style.marginRight = "10px";
-    img.style.borderRadius = "6px";
-    preview.appendChild(img);
-  });
-}
-
 function deleteProduct(productId) {
   showConfirm(
     "Delete Product",
@@ -676,128 +648,49 @@ function updateStock(productId, change) {
   }).then(() => loadProducts(true));
 }
 
-function applyFilters() {
-  const q = document.getElementById("searchInput")?.value.trim().toLowerCase() || "";
-  const cat = document.getElementById("categoryFilter")?.value || "";
-  const sort = document.getElementById("sortFilter")?.value || "";
+function validateImages(files) {
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+  const maxSize = 7 * 1024 * 1024;
 
-  let filtered = [...productCache];
-
-  if (q) {
-    filtered = filtered.filter(p =>
-      p.name.toLowerCase().includes(q) ||
-      p.description.toLowerCase().includes(q) ||
-      p.category.toLowerCase().includes(q)
-    );
+  for (let file of files) {
+    if (!allowedTypes.includes(file.type)) {
+      showToast("Only JPG, PNG, WEBP images Allowed", "info");
+      return false;
+    }
+    if (file.size > maxSize) {
+      showToast("Each Image Must Be Under 7MB", "info");
+      return false;
+    }
   }
-
-  if (cat) {
-    filtered = filtered.filter(p => p.category_id === cat);
-  }
-
-  if (sort === "price_asc") filtered.sort((a, b) => a.price - b.price);
-  if (sort === "price_desc") filtered.sort((a, b) => b.price - a.price);
-  if (sort === "name_asc") filtered.sort((a, b) => a.name.localeCompare(b.name));
-  if (sort === "name_desc") filtered.sort((a, b) => b.name.localeCompare(a.name));
-
-  renderProducts(
-    filtered,
-    IS_ADMIN_PRODUCTS_PAGE,
-    IS_DASHBOARD_PAGE && IS_ADMIN
-  );
+  return true;
 }
 
-function loadCategoryFilter() {
-  fetch("/api/categories/with-count")
-    .then(res => res.json())
-    .then(categories => {
-      const select = document.getElementById("categoryFilter");
-      if (!select) return;
+function previewImages() {
+  const preview = document.getElementById("imagePreview");
+  const files = document.getElementById("images").files;
 
-      select.innerHTML = `<option value="">All Categories</option>`;
+  preview.innerHTML = "";
 
-      categories.forEach(c => {
-        const option = document.createElement("option");
-        option.value = c.id;
-        option.textContent = `${titleCase(c.name)} (${c.count})`;
-        select.appendChild(option);
-      });
-    })
-    .catch(() => console.error("Failed to load category filter"));
-}
-
-function addToCart(productId) {
-  fetch("/api/cart/add", {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ product_id: productId })
-  })
-  .then(async res => {
-    if (res.status === 401) {
-      showConfirm(
-        "Login Required",
-        "You must login to add items to cart. Go to login page?",
-        () => {
-          localStorage.setItem("pendingCartProduct", productId);
-          showToast("Please Login To Continue", "info", 3000, true);
-          window.location.href = "/login";
-        }
-      );
-      return;
-    }
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      showToast(data.message || "Cannot add to cart", "error");
-      return;
-    }
-    showToast("Product Added To Your Cart Successfully.", "success");
-    updateCartCount();
+  Array.from(files).forEach(file => {
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
+    img.style.width = "80px";
+    img.style.marginRight = "10px";
+    img.style.borderRadius = "6px";
+    preview.appendChild(img);
   });
 }
 
-function updateCartCount() {
-  fetch("/api/cart", { credentials: "include" })
-    .then(res => {
-      if (!res.ok) return null;
-      return res.json();
-    })
-    .then(data => {
-      const badge = document.getElementById("cartCount");
-      if (!badge || !data || !data.items) return;
+function clearImagePreview() {
+  const preview = document.getElementById("imagePreview");
+  if (preview) {
+    preview.innerHTML = "";
+  }
 
-      const count = data.items.length;
-
-      if (count === 0) {
-        badge.classList.add("hidden");
-      } else {
-        badge.textContent = count;
-        badge.classList.remove("hidden");
-      }
-    })
-    .catch(() => {});
-}
-
-function updateWishlistCount() {
-  fetch("/api/users/wishlist", { credentials: "include" })
-    .then(res => {
-      if (res.status === 401) return null;
-      return res.json();
-    })
-    .then(data => {
-      const badge = document.getElementById("wishlistCount");
-      if (!badge || !data || !data.products) return;
-
-      const count = data.products.length;
-
-      if (count === 0) {
-        badge.classList.add("hidden");
-      } else {
-        badge.textContent = count;
-        badge.classList.remove("hidden");
-      }
-    })
-    .catch(() => {});
+  const imagesInput = document.getElementById("images");
+  if (imagesInput) {
+    imagesInput.value = "";
+  }
 }
 
 function clearForm() {
@@ -827,18 +720,6 @@ function clearForm() {
   clearImagePreview();
   clearSpecs();
   clearDetails();
-}
-
-function clearImagePreview() {
-  const preview = document.getElementById("imagePreview");
-  if (preview) {
-    preview.innerHTML = "";
-  }
-
-  const imagesInput = document.getElementById("images");
-  if (imagesInput) {
-    imagesInput.value = "";
-  }
 }
 
 function clearSpecs() {
@@ -871,20 +752,6 @@ function addSpecRow(name = "", value = "", readonly = false, isDefault = false) 
   container.appendChild(row);
 }
 
-function loadSpecsForEdit(specs) {
-  const container = document.getElementById("specRows");
-  container.innerHTML = "";
-
-  specs.forEach(s => {
-    addSpecRow(
-      s.name,
-      s.value,
-      s.is_default === true,
-      s.is_default === true
-    );
-  });
-}
-
 function collectProductSpecs() {
   const specs = [];
 
@@ -903,6 +770,20 @@ function collectProductSpecs() {
     }
   });
   return specs;
+}
+
+function loadSpecsForEdit(specs) {
+  const container = document.getElementById("specRows");
+  container.innerHTML = "";
+
+  specs.forEach(s => {
+    addSpecRow(
+      s.name,
+      s.value,
+      s.is_default === true,
+      s.is_default === true
+    );
+  });
 }
 
 function addDetailSection(title = "", items = [], readonly = false, isDefault = false) {
@@ -980,67 +861,318 @@ function collectDetails() {
   return sections;
 }
 
-function showToast(message, type = "info", duration = 3000, persist = false) {
-  if (persist) {
-    sessionStorage.setItem(
-      "redirectToast",
-      JSON.stringify({ message, type, duration })
+function applyFilters() {
+  const q = document.getElementById("searchInput")?.value.trim().toLowerCase() || "";
+  const cat = document.getElementById("categoryFilter")?.value || "";
+  const sort = document.getElementById("sortFilter")?.value || "";
+
+  let filtered = [...productCache];
+
+  if (q) {
+    filtered = filtered.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q)
     );
+  }
+
+  if (cat) {
+    filtered = filtered.filter(p => p.category_id === cat);
+  }
+
+  if (sort === "price_asc") filtered.sort((a, b) => a.price - b.price);
+  if (sort === "price_desc") filtered.sort((a, b) => b.price - a.price);
+  if (sort === "name_asc") filtered.sort((a, b) => a.name.localeCompare(b.name));
+  if (sort === "name_desc") filtered.sort((a, b) => b.name.localeCompare(a.name));
+
+  renderProducts(
+    filtered,
+    IS_ADMIN_PRODUCTS_PAGE,
+    IS_DASHBOARD_PAGE && IS_ADMIN
+  );
+}
+
+function loadCategoryFilter() {
+  fetch("/api/categories/with-count")
+    .then(res => res.json())
+    .then(categories => {
+      const select = document.getElementById("categoryFilter");
+      if (!select) return;
+
+      select.innerHTML = `<option value="">All Categories</option>`;
+
+      categories.forEach(c => {
+        const option = document.createElement("option");
+        option.value = c.id;
+        option.textContent = `${titleCase(c.name)} (${c.count})`;
+        select.appendChild(option);
+      });
+    })
+    .catch(() => console.error("Failed to load category filter"));
+}
+
+function loadCategoryDropdown() {
+  fetch("/api/categories")
+    .then(res => res.json())
+    .then(categories => {
+      const select = document.getElementById("categorySelect");
+      if (!select) return;
+
+      select.innerHTML = `<option value="">Select Category</option>`;
+
+      categories.forEach(c => {
+        select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+      });
+
+      select.addEventListener("change", async () => {
+        const categoryId = select.value;
+        if (!categoryId) {
+          clearSpecs();
+          clearDetails();
+          return;
+        }
+        try {
+          const res = await fetch(`/api/categories/${categoryId}/template`, {
+            credentials: "include"
+          });
+
+          const template = await res.json();
+          clearSpecs();
+          clearDetails();
+          loadSpecsFromTemplate(template.spec_names || []);
+          loadDetailsFromTemplate(template.detail_titles || []);
+        } catch (err) {
+          showToast("Failed To Load Category Template", "error");
+        }
+      });
+    });
+}
+
+function loadCategoryTemplate(categoryId) {
+  if (!categoryId) return;
+
+  return fetch(`/api/categories/${categoryId}/template`, { credentials: "include" })
+    .then(res => res.json())
+    .then(template => {
+      loadSpecsFromTemplate(template.spec_names || []);
+      loadDetailsFromTemplate(template.detail_titles || []);
+    })
+    .catch(() => showToast("Failed To Load Category Template", "error"));
+}
+
+function loadSpecsFromTemplate(specNames) {
+  const container = document.getElementById("specRows");
+  container.innerHTML = "";
+
+  specNames.forEach(name => {
+    addSpecRow(name, "", true, true);
+  });
+}
+
+function loadDetailsFromTemplate(detailTitles) {
+  const container = document.getElementById("detailSections");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  detailTitles.forEach(title => {
+    addDetailSection(title, [], true, true);
+  });
+}
+
+function addToCart(productId) {
+  fetch("/api/cart/add", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ product_id: productId })
+  })
+  .then(async res => {
+    if (res.status === 401) {
+      showConfirm(
+        "Login Required",
+        "You must login to add items to cart. Go to login page?",
+        () => {
+          localStorage.setItem("pendingCartProduct", productId);
+          showToast("Please Login To Continue", "info", 3000, true);
+          window.location.href = "/login";
+        }
+      );
+      return;
+    }
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.message || "Cannot add to cart", "error");
+      return;
+    }
+    showToast("Product Added To Your Cart Successfully.", "success");
+    updateCartCount();
+  });
+}
+
+async function moveToCart(productId) {
+  try {
+    const res = await fetch("/api/cart/add", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ product_id: productId })
+    });
+
+    if (!res.ok) {
+      showToast("Failed To Add Product To Cart", "error");
+      return;
+    }
+
+    await fetch(`/api/users/wishlist/remove/${productId}`, {
+      method: "DELETE",
+      credentials: "include"
+    });
+
+    showToast("Product Moved To Your Cart Successfully.", "success");
+
+    updateCartCount();
+    updateWishlistCount();
+
+    if (typeof loadWishlistPage === "function") {
+      loadWishlistPage();
+    }
+
+  } catch (err) {
+    showToast("Move To Cart Failed", "error");
+  }
+}
+
+function updateCartCount() {
+  fetch("/api/cart", { credentials: "include" })
+    .then(res => {
+      if (!res.ok) return null;
+      return res.json();
+    })
+    .then(data => {
+      const badge = document.getElementById("cartCount");
+      if (!badge || !data || !data.items) return;
+
+      const count = data.items.length;
+
+      if (count === 0) {
+        badge.classList.add("hidden");
+      } else {
+        badge.textContent = count;
+        badge.classList.remove("hidden");
+      }
+    })
+    .catch(() => {});
+}
+
+function updateWishlistCount() {
+  fetch("/api/users/wishlist", { credentials: "include" })
+    .then(res => {
+      if (res.status === 401) return null;
+      return res.json();
+    })
+    .then(data => {
+      const badge = document.getElementById("wishlistCount");
+      if (!badge || !data || !data.products) return;
+
+      const count = data.products.length;
+
+      if (count === 0) {
+        badge.classList.add("hidden");
+      } else {
+        badge.textContent = count;
+        badge.classList.remove("hidden");
+      }
+    })
+    .catch(() => {});
+}
+
+function toggleWishlist(btn) {
+  const productId = btn.dataset.productId;
+
+  if (!productId) {
+    console.error("Wishlist error: productId missing");
     return;
   }
 
-  const container = document.getElementById("toastContainer");
-  if (!container) return;
+  fetch("/api/users/profile", { credentials: "include" })
+    .then(res => {
+      if (!res.ok) {
+        showConfirm(
+          "Login Required",
+          "You must login to use wishlist. Go to login page?",
+          () => {
+            localStorage.setItem("pendingWishlistProduct", productId);
+            showToast("Please Login To Continue", "info", 3000, true);
+            window.location.href = "/login";
+          }
+        );
+        return Promise.reject("GUEST_CONFIRM");
+      }
+    })
 
-  const toast = document.createElement("div");
-  toast.className = `toast ${type}`;
-  toast.innerText = message;
+    .then(() => {
+      const isActive = btn.classList.contains("active");
 
-  container.appendChild(toast);
+      const url = isActive
+        ? `/api/users/wishlist/remove/${productId}`
+        : `/api/users/wishlist/add/${productId}`;
 
-  setTimeout(() => toast.classList.add("show"), 10);
+      return fetch(url, {
+        method: isActive ? "DELETE" : "POST",
+        credentials: "include"
+      });
+    })
 
-  setTimeout(() => {
-    toast.classList.remove("show");
-    setTimeout(() => toast.remove(), 300);
-  }, duration);
+    .then(res => res.json())
+    .then(data => {
+      if (!data || !data.product_id) return;
+
+      const wasActive = btn.classList.contains("active");
+
+      btn.classList.toggle("active");
+
+      const icon = btn.querySelector("i");
+      const text = btn.querySelector(".wishlist-text");
+      const isProductDetails = btn.dataset.context === "product-details";
+
+      if (icon) {
+        icon.classList.toggle("fa-regular");
+        icon.classList.toggle("fa-solid");
+      }
+
+      const isNowActive = btn.classList.contains("active");
+
+      if (isProductDetails && text) {
+        if (isNowActive) {
+          text.textContent = "Added to Wishlist";
+          btn.classList.add("added");
+        } else {
+          text.textContent = "Add to Wishlist";
+          btn.classList.remove("added");
+        }
+      }
+
+      if (isNowActive) {
+        showToast("Product Added To Your Wishlist", "success");
+      } else {
+        showToast("Product Removed From Your Wishlist", "info");
+      }
+
+      if (typeof updateWishlistCount === "function") {
+        updateWishlistCount();
+      }
+
+      if (!isNowActive && location.pathname === "/wishlist") {
+        loadWishlistPage();
+      }
+    })
+
+    .catch(err => {
+      if (err === "GUEST_CONFIRM") return;
+      showToast("Wishlist action failed", "error");
+    });
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-  const stored = sessionStorage.getItem("redirectToast");
-
-  if (stored) {
-    sessionStorage.removeItem("redirectToast");
-
-    const { message, type, duration } = JSON.parse(stored);
-
-    setTimeout(() => {
-      showToast(message, type, duration);
-    }, 200);
-  }
-});
-
-let confirmCallback = null;
-
-function showConfirm(title, message, onYes) {
-  const modal = document.getElementById("confirmModal");
-  document.getElementById("confirmTitle").innerText = title;
-  document.getElementById("confirmMessage").innerText = message;
-
-  confirmCallback = onYes;
-
-  modal.classList.remove("hidden");
-}
-
-function closeConfirm() {
-  document.getElementById("confirmModal").classList.add("hidden");
-  confirmCallback = null;
-}
-
-document.getElementById("confirmYesBtn")?.addEventListener("click", () => {
-  if (confirmCallback) confirmCallback();
-  closeConfirm();
-});
 
 function openAdminTab(sectionId, btn) {
 

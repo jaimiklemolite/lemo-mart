@@ -703,6 +703,29 @@ select:focus {
   box-shadow: 0 8px 22px rgba(0,0,0,0.08);
 }
 
+.info-btn {
+  position: absolute;
+  top: 12px;
+  right: 50px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.info-btn:hover {
+  background: #1d4ed8;
+  color: #fff;
+  transform: scale(1.05);
+}
+
 .edit-btn {
   position: absolute;
   top: 12px;
@@ -724,6 +747,185 @@ select:focus {
   background: #ff9900;
   color: #fff;
   transform: scale(1.05);
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.hidden {
+  display: none;
+}
+
+.modal-box {
+  width: 560px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+  animation: modalPop .25s ease;
+}
+
+@keyframes modalPop {
+  from { transform: scale(.92); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modal-head h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.modal-head button {
+  border: none;
+  background: #f3f4f6;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.modal-head button:hover {
+  background: #e5e7eb;
+}
+
+.modal-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.stat-card {
+  background: #f9fafb;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+}
+
+.stat-card span {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.stat-card b {
+  display: block;
+  margin-top: 6px;
+  font-size: 18px;
+  color: #111827;
+}
+
+.status {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.status.green {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status.red {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.card {
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 16px;
+  background: #fafafa;
+}
+
+.slider-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 18px;
+}
+
+.slide-content {
+  text-align: center;
+}
+
+.slide-content span {
+  display: block;
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.slide-content b {
+  font-size: 26px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.slide-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 4px 8px;
+}
+
+.slide-btn:hover {
+  color: #111827;
+}
+
+.slide-btn.left {
+  left: 10px;
+}
+
+.slide-btn.right {
+  right: 10px;
+}
+
+.card h4 {
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.card ul {
+  padding-left: 18px;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .category-card h3 {
@@ -1816,6 +2018,12 @@ tr:hover {
   font-weight: 700;
   color: #111;
   margin: 0;
+}
+
+.analytics-card small {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
 }
 
 /* CHART GRID */

@@ -1,3 +1,5 @@
+from datetime import datetime
+from flask import request
 import re
 
 def title_case(text):
@@ -19,3 +21,19 @@ def slugify(text):
     text = text.lower()
     text = re.sub(r'[^a-z0-9]+', '-', text)
     return text.strip('-')
+
+def parse_date_range():
+    start = request.args.get("start")
+    end = request.args.get("end")
+
+    if not start or not end:
+        return None
+
+    return {
+        "$match": {
+            "created_at": {
+                "$gte": datetime.fromisoformat(start.replace("Z", "")),
+                "$lte": datetime.fromisoformat(end.replace("Z", ""))
+            }
+        }
+    }
