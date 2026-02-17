@@ -100,7 +100,6 @@ def category_summary(category_id):
                 if item.get("product_id") in product_ids:
                     matched = True
 
-                    # count sold only if order delivered
                     if order.get("status") == "Delivered":
                         delivered_matched = True
                         qty = item.get("qty", 0)

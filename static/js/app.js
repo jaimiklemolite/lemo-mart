@@ -1199,7 +1199,13 @@ function openAdminTab(sectionId, btn) {
     loadOrders();
   }
   if (sectionId === "analyticsSection") {
-    loadAnalyticsDashboard();
+    const rangeSelect = document.getElementById("rangeSelect");
+    if (!startDate || !endDate) {
+      rangeSelect.value = "7";
+      onRangeChange();
+    } else {
+      loadAnalyticsDashboard();
+    }
   }
 }
 

@@ -54,6 +54,33 @@ function onCustomDateChange() {
   loadAnalyticsDashboard();
 }
 
+function animateValue(el, start, end, duration = 900, isCurrency = true) {
+  if (!el) return;
+
+  const range = end - start;
+  if (range === 0) {
+    el.textContent = isCurrency
+      ? "₹" + end.toLocaleString()
+      : end.toLocaleString();
+    return;
+  }
+  const startTime = performance.now();
+
+  function update(now) {
+    const progress = Math.min((now - startTime) / duration, 1);
+
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const value = Math.floor(start + range * ease);
+
+    el.textContent = isCurrency
+      ? "₹" + value.toLocaleString()
+      : value.toLocaleString();
+
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
 function loadSummary() {
   const query = buildQuery();
 
@@ -82,17 +109,17 @@ function loadSummary() {
     document.getElementById("summaryCards").innerHTML = `
       <div class="analytics-card">
         <h4>Gross Revenue</h4>
-        <p>₹${data.gross_revenue}</p>
+        <p id="grossRevenue">₹0</p>
       </div>
 
       <div class="analytics-card">
         <h4>Net Revenue</h4>
-        <p>₹${data.net_revenue}</p>
+        <p id="netRevenue">₹0</p>
       </div>
 
       <div class="analytics-card">
         <h4>Revenue Growth (${label})</h4>
-        <p>₹${growthData.current}</p>
+        <p id="growthRevenue">₹0</p>
         <small style="color:${color}; font-weight:600;">
           ${arrow} ${Math.abs(growth)}% vs previous period
         </small>
@@ -100,14 +127,21 @@ function loadSummary() {
 
       <div class="analytics-card">
         <h4>Total Delivered Orders</h4>
-        <p>${data.orders}</p>
+        <p id="totalOrders">0</p>
       </div>
 
       <div class="analytics-card">
         <h4>Total Items Sold</h4>
-        <p>${data.sold_items}</p>
+        <p id="soldItems">0</p>
       </div>
     `;
+
+    animateValue(document.getElementById("grossRevenue"), 0, data.gross_revenue, 900, true);
+    animateValue(document.getElementById("netRevenue"), 0, data.net_revenue, 900, true);
+    animateValue(document.getElementById("growthRevenue"), 0, growthData.current, 900, true);
+    animateValue(document.getElementById("totalOrders"), 0, data.orders, 700, false);
+    animateValue(document.getElementById("soldItems"), 0, data.sold_items, 700, false);
+
   })
   .catch(() => console.error("Failed to load summary"));
 }

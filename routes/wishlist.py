@@ -53,7 +53,6 @@ def add_to_wishlist(product_id):
     user_id = ObjectId(session.get("user_id"))
     pid = ObjectId(product_id)
 
-    # Prevent duplicate
     exists = mongo.db.wishlists.find_one({
         "user_id": user_id,
         "product_id": pid
