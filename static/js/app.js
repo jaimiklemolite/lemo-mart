@@ -2,7 +2,7 @@ const IS_ADMIN = window.USER_ROLE === "admin";
 const IS_ADMIN_PRODUCTS_PAGE = location.pathname.startsWith("/admin");
 const IS_DASHBOARD_PAGE = location.pathname === "/dashboard";
 
-// UTILITIES
+// UTILITIES (Titlecase, Toast MSG)
 function titleCase(str) {
   if (!str) return "";
   return str
@@ -74,7 +74,7 @@ document.getElementById("confirmYesBtn")?.addEventListener("click", () => {
   closeConfirm();
 });
 
-// AUTH MODULE
+// AUTH MODULE (LOGIN, LOGOUT, SIGNUP)
 function login() {
   const emailVal = document.getElementById("email").value.trim();
   const passwordVal = document.getElementById("password").value.trim();
@@ -140,9 +140,14 @@ function login() {
       });
       return;
     }
-
+    const redirectAfterLogin = sessionStorage.getItem("postLoginRedirect");
+    if (redirectAfterLogin) {
+      sessionStorage.removeItem("postLoginRedirect");
+      window.location.href = redirectAfterLogin;
+      return;
+    }
     showToast("Login Successful", "success", 3000, true);
-    window.location.href = "/dashboard";
+        window.location.href = "/dashboard";
   });
 }
 
@@ -289,7 +294,7 @@ document.addEventListener("click", (e) => {
   }
 });
 
-// PRODUCTS MODULE
+// PRODUCTS MODULE (LOAD, RENDER)
 let productCache = [];
 const imageIndexMap = {};
 
@@ -370,7 +375,7 @@ function renderProducts(list, showAdmin = false, isAdminView = false) {
               : `<div class="stock-label in-stock">In Stock (${p.quantity})</div>`
           }
 
-          <div class="price">₹${p.price}</div>
+          <div class="price">₹${p.price?.toLocaleString("en-IN") || 0}</div>
 
           <div class="product-actions">
             <button onclick="viewProduct('${p._id}')">View</button>
@@ -431,10 +436,12 @@ function slideProductImage(productId, direction) {
   }
 }
 
+// VIEW PRODUCT
 function viewProduct(id) {
   window.location.href = "/products/" + id;
 }
 
+// EDIT PRODUCT
 async function editProductById(productId) {
   const p = productCache.find(prod => prod._id === productId);
   if (!p) return;
@@ -504,6 +511,7 @@ async function editProductById(productId) {
   openAdminTab("formTab");
 }
 
+// ADD PRODUCT
 function addProduct() {
   const fd = new FormData();
 
@@ -562,6 +570,7 @@ function addProduct() {
     .catch(() => showToast("Server Error While Adding Product", "error"));
 }
 
+// UPDATE PRODUCT
 function updateProduct() {
   const id = document.getElementById("productId").value;
   if (!id) {
@@ -614,6 +623,7 @@ function updateProduct() {
     });
 }
 
+// DELETE PRODUCT
 function deleteProduct(productId) {
   showConfirm(
     "Delete Product",
@@ -639,6 +649,7 @@ function deleteProduct(productId) {
   return;
 }
 
+// STOCK UPDATE
 function updateStock(productId, change) {
   fetch("/api/products/update-stock", {
     method: "PUT",
@@ -693,6 +704,7 @@ function clearImagePreview() {
   }
 }
 
+// CLEAR FORM
 function clearForm() {
   ["productId", "name", "price", "description"].forEach(id => {
     const el = document.getElementById(id);
@@ -735,6 +747,7 @@ function clearDetails() {
   if (container) container.innerHTML = "";
 }
 
+// ADD, COLLECT, LOAD-FOR-EDIT SPECIFICATION NAME
 function addSpecRow(name = "", value = "", readonly = false, isDefault = false) {
   const container = document.getElementById("specRows");
 
@@ -786,6 +799,7 @@ function loadSpecsForEdit(specs) {
   });
 }
 
+// ADD, COLLECT, LOAD-FOR-EDIT DETAIL TITLE
 function addDetailSection(title = "", items = [], readonly = false, isDefault = false) {
   const container = document.getElementById("detailSections");
 
@@ -861,6 +875,7 @@ function collectDetails() {
   return sections;
 }
 
+// FILTERS
 function applyFilters() {
   const q = document.getElementById("searchInput")?.value.trim().toLowerCase() || "";
   const cat = document.getElementById("categoryFilter")?.value || "";
@@ -892,6 +907,7 @@ function applyFilters() {
   );
 }
 
+// FILTERS, DROPDOWN, LOAD TEMPLATES FOR CATEGORY
 function loadCategoryFilter() {
   fetch("/api/categories/with-count")
     .then(res => res.json())
@@ -980,6 +996,7 @@ function loadDetailsFromTemplate(detailTitles) {
   });
 }
 
+// ADD & MOVE TO CART
 function addToCart(productId) {
   fetch("/api/cart/add", {
     method: "POST",
@@ -1043,6 +1060,7 @@ async function moveToCart(productId) {
   }
 }
 
+// CART & WISHLIST COUNT UPDATE
 function updateCartCount() {
   fetch("/api/cart", { credentials: "include" })
     .then(res => {
@@ -1087,6 +1105,7 @@ function updateWishlistCount() {
     .catch(() => {});
 }
 
+// WISHLIST TOGGLE
 function toggleWishlist(btn) {
   const productId = btn.dataset.productId;
 
@@ -1170,12 +1189,40 @@ function toggleWishlist(btn) {
 
     .catch(err => {
       if (err === "GUEST_CONFIRM") return;
-      showToast("Wishlist action failed", "error");
+      showToast("Wishlist Action Failed", "error");
     });
 }
 
-function openAdminTab(sectionId, btn) {
+// LOGIN REDIRECT 
+function requireLoginRedirect(redirectPath) {
+  fetch("/api/users/profile", { credentials: "include" })
+    .then(res => {
+      if (!res.ok) {
+        showConfirm(
+          "Login Required",
+          "You must login to access this page. Go to login page?",
+          () => {
+            sessionStorage.setItem("postLoginRedirect", redirectPath);
+            showToast("Please Login To Continue", "info", 3000, true);
+            window.location.href = "/login";
+          }
+        );
+        throw "NOT_LOGGED_IN";
+      }
+      return res.json();
+    })
+    .then(() => {
+      window.location.href = redirectPath;
+    })
+    .catch(err => {
+      if (err !== "NOT_LOGGED_IN") {
+        console.error("Login check failed");
+      }
+    });
+}
 
+// ADMIN TAB SECTION
+function openAdminTab(sectionId, btn) {
   document.querySelectorAll(".admin-section")
     .forEach(sec => sec.classList.add("hidden"));
 

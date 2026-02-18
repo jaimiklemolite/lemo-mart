@@ -51,11 +51,10 @@ def add_to_wishlist(product_id):
         return jsonify({"message": "Admins cannot use wishlist"}), 403
 
     user_id = ObjectId(session.get("user_id"))
-    pid = ObjectId(product_id)
 
     exists = mongo.db.wishlists.find_one({
         "user_id": user_id,
-        "product_id": pid
+        "product_id": ObjectId(product_id)
     })
 
     if exists:
@@ -63,7 +62,7 @@ def add_to_wishlist(product_id):
 
     mongo.db.wishlists.insert_one({
         "user_id": user_id,
-        "product_id": pid,
+        "product_id": ObjectId(product_id),
         "created_at": datetime.utcnow()
     })
 

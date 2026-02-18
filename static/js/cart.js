@@ -41,7 +41,7 @@ function loadCart() {
 
             <div class="cart-info">
               <h4>${item.name}</h4>
-              <div class="price">₹ ${item.price}</div>
+              <div class="price">₹ ${item.price?.toLocaleString("en-IN") || 0}</div>
 
               <div class="cart-actions">
                 <button
@@ -81,7 +81,7 @@ function loadCart() {
         ${data.items.map(item => `
           <div class="cart-summary-item">
             <span>${item.name}</span>
-            <span>₹ ${item.price} × ${item.qty}</span>
+            <span>₹ ${item.price?.toLocaleString("en-IN") || 0} × ${item.qty}</span>
           </div>
         `).join("")}
 
@@ -89,12 +89,12 @@ function loadCart() {
 
         <div class="cart-summary-item">
           <span>Amount</span>
-          <span>₹ ${totalAmount}</span>
+          <span>₹ ${totalAmount?.toLocaleString("en-IN") || 0}</span>
         </div>
 
         <div class="cart-summary-total">
           <span>Total (Including Shipping)</span>
-          <span>₹ ${totalAmount}</span>
+          <span>₹ ${totalAmount?.toLocaleString("en-IN") || 0}</span>
         </div>
 
         <button class="place-order-btn" onclick="placeOrder()">

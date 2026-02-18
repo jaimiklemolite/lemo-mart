@@ -69,16 +69,11 @@ def get_categories():
 @category_bp.route("/<category_id>/summary", methods=["GET"])
 @login_required(role="admin")
 def category_summary(category_id):
-    try:
-        oid = ObjectId(category_id)
-    except:
-        return jsonify({"message": "Invalid category id"}), 400
-
-    category = mongo.db.category.find_one({"_id": oid})
+    category = mongo.db.category.find_one({"_id": ObjectId(category_id)})
     if not category:
         return jsonify({"message": "Category not found"}), 404
 
-    products = list(mongo.db.products.find({"category_id": oid}))
+    products = list(mongo.db.products.find({"category_id": ObjectId(category_id)}))
     product_ids = [p["_id"] for p in products]
     product_count = len(products)
 

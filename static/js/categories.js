@@ -76,7 +76,7 @@ async function showCategoryInfo(categoryId) {
 
     salesData = [
       { label: "Total Sold Qty", value: data.total_sold_qty || 0 },
-      { label: "Revenue", value: `₹ ${data.revenue || 0}` }
+      { label: "Revenue", value: `₹ ${data.revenue?.toLocaleString("en-IN") || 0}` }
     ];
 
     ordersIndex = 0;

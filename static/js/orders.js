@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function loadOrders(container) {
-  fetch("/api/users/profile", { credentials: "include" }) 
+  fetch("/api/users/profile", { credentials: "include" })
   .then(res => res.ok ? res.json() : null)
     .then(data => {
       if (!data) return;
@@ -33,7 +33,8 @@ function filterOrdersByStatus() {
   if (search) {
     filtered = filtered.filter(order =>
       order.id.toLowerCase().includes(search) ||
-      order.items.some(item => item.name.toLowerCase().includes(search))
+      order.items.some(item => item.name.toLowerCase().includes(search)) ||
+      order.items.some(item => item.category.toLowerCase().includes(search))
     );
   }
 
@@ -99,8 +100,11 @@ function renderOrders(container, orders) {
 
               <div class="order-info">
                 <h4>${item.name}</h4>
+                <p class="admin-product-category">
+                  ${titleCase(item.category || "Unknown")}
+                </p>
                 <p>Qty: ${item.qty}</p>
-                <p>₹${item.price}</p>
+                <p>₹${item.price?.toLocaleString("en-IN") || 0}</p>
               </div>
             </div>
           `).join("")}
@@ -108,6 +112,13 @@ function renderOrders(container, orders) {
 
         <div class="order-status-row">
           <div>
+            <div class="order-summary">
+              <p><strong>Order Date:</strong> ${new Date(order.created_at).toLocaleDateString()}</p>
+              <p><strong>Total Items:</strong> ${order.total_items}</p>
+              <p class="order-total" style="font-weight: 500;color: #0f766e;">
+                <strong>Order Total:</strong> ₹${order.order_total?.toLocaleString("en-IN") || 0}
+              </p>
+            </div>
             <div class="order-status-label">
               Order Status: ${order.status}
             </div>
@@ -159,7 +170,7 @@ function cancelOrder(orderId) {
         const container = document.getElementById("ordersContainer");
         if (container) {
           loadOrders(container);
-          setTimeout(filterOrdersByStatus, 50);
+          setTimeout(filterOrdersByCategory, 50);
         }
       });
     }

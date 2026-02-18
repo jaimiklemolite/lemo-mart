@@ -45,7 +45,6 @@ fetch("/api/users/profile", {
 
       <div class="order-header">
         <span><b>Order ID:</b> ${order.order_number}</span>
-
         <span class="order-status ${order.status.toLowerCase().replace(/ /g, "-")}">
           ${order.status}
         </span>
@@ -53,10 +52,13 @@ fetch("/api/users/profile", {
 
       <div class="order-summary-items">
         ${order.items.map(item => `
-          <p>• ${item.name} × ${item.qty} (₹${item.price})</p>
+          <p>• ${item.name} × ${item.qty} (₹${item.price?.toLocaleString("en-IN") || 0})</p>
         `).join("")}
       </div>
-
+      <p><strong>Total Items:</strong> ${order.total_items}</p>
+      <p class="order-total" style="font-weight: 500;color: #0f766e;">
+        <strong>Order Total:</strong> ₹${order.order_total?.toLocaleString("en-IN") || 0}
+      </p>
     </div>
   `).join("");
 });

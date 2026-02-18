@@ -1231,6 +1231,13 @@ select:focus {
   color: #555;
 }
 
+.order-summary {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+
 .order-status-row {
   display: flex;
   justify-content: space-between;
@@ -1430,7 +1437,7 @@ tr:hover {
 }
 
 .admin-order-meta p {
-  margin: 0;
+  margin: 0 0 6px;
   font-size: 14px;
   color: #333;
 }

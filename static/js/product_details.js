@@ -34,7 +34,7 @@ function loadProductDetails(productId) {
       }
 
       document.getElementById("pd-name").textContent = p.name;
-      document.getElementById("pd-price").textContent = `₹${p.price}`;
+      document.getElementById("pd-price").textContent = `₹${p.price?.toLocaleString("en-IN") || 0}`;
       document.getElementById("pd-description").textContent = p.description;
       document.getElementById("pd-category").textContent = titleCase(p.category);
 
@@ -341,7 +341,7 @@ function loadRelatedProducts(productId) {
 
           <div class="product-details">
             <h4>${p.name}</h4>
-            <div class="price">₹${p.price}</div>
+            <div class="price">₹${p.price?.toLocaleString("en-IN") || 0}</div>
 
             <div class="product-actions">
               <button onclick="viewProduct('${p.id}')">

@@ -1,6 +1,12 @@
 let cachedUsers = [];
 let cachedOrders = [];
 
+function capitalizeFirstLetter(str) {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// LOAD USERS AND TABLE
 function loadUsers() {
   fetch("/api/users/admin/users", { credentials: "include" })
     .then(res => res.json())
@@ -36,11 +42,7 @@ function renderUsersTable(users) {
   `;
 }
 
-function capitalizeFirstLetter(str) {
-  if (!str) return "";
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
+// LOAD & RENDER ORDERS
 function loadOrders() {
   fetch("/api/orders/all", {
     credentials: "include"
@@ -55,7 +57,8 @@ function loadOrders() {
       return;
     }
 
-    cachedOrders = sortOrdersSmartly(data.orders);
+    cachedOrders = sortOrdersByDate(data.orders);
+    populateOrderCategoryFilter(); 
     renderOrders(cachedOrders);
     updateOrderCount(cachedOrders);
   });
@@ -78,6 +81,11 @@ function renderOrders(orders) {
           <p><strong>Order ID:</strong> ${order.order_number}</p>
           <p><strong>Username:</strong> ${order.username}</p>
           <p><strong>Customer Email:</strong> ${order.customer_email}</p>
+          <p><strong>Order Date:</strong> ${new Date(order.created_at).toLocaleDateString()}</p>
+          <p><strong>Total Items:</strong> ${order.total_items}</p>
+          <p class="admin-order-total" style="font-weight: 500;color: #0f766e;">
+            <strong>Order Total:</strong> ₹${order.order_total?.toLocaleString("en-IN") || 0}
+          </p>
         </div>
 
         <div class="admin-order-divider"></div>
@@ -96,8 +104,11 @@ function renderOrders(orders) {
 
             <div class="admin-product-info">
               <h4>${item.name}</h4>
+              <p class="admin-product-category">
+                ${titleCase(item.category || "Unknown")}
+              </p>
               <p>Qty: ${item.qty}</p>
-              <p class="price">₹${item.price}</p>
+              <p class="price">₹${item.price?.toLocaleString("en-IN") || 0}</p>
             </div>
           </div>
         `).join("")}
@@ -107,33 +118,24 @@ function renderOrders(orders) {
   `).join("");
 }
 
+// FILTER BY STATUS, COUNT, DATE CREATED FOR ORDERS
 function filterOrdersByStatus() {
-  const selectedStatus = document.getElementById("orderStatusFilter").value;
-
-  if (selectedStatus === "All") {
-    renderOrders(cachedOrders);
-    updateOrderCount(cachedOrders);
-    return;
-  }
-
-  const filtered = cachedOrders.filter(order => order.status === selectedStatus);
-  renderOrders(filtered);
-  updateOrderCount(filtered);
+  filterOrdersByCategory();
 }
 
 function updateOrderCount(orders) {
   const el = document.getElementById("orderCount");
   if (!el) return;
-
   el.innerText = `Order(s) Found: ${orders.length}`;
 }
 
-function sortOrdersSmartly(orders) {
+function sortOrdersByDate(orders) {
   return [...orders].sort(
     (a, b) => new Date(b.created_at) - new Date(a.created_at)
   );
 }
 
+// ORDER STATUS CONTROL & UPDATE
 function renderAdminStatusControl(order) {
   const STATUS_FLOW = {
     "Pending": ["Approved", "Rejected"],
@@ -181,6 +183,50 @@ function renderAdminStatusControl(order) {
   `;
 }
 
+function filterOrdersByCategory() {
+  const selectedCategory =
+    document.getElementById("orderCategoryFilter").value;
+
+  const selectedStatus =
+    document.getElementById("orderStatusFilter").value;
+
+  let filtered = [...cachedOrders];
+
+  if (selectedStatus !== "All") {
+    filtered = filtered.filter(o => o.status === selectedStatus);
+  }
+
+  if (selectedCategory !== "All") {
+    filtered = filtered.filter(order =>
+      order.items.some(item => item.category === selectedCategory)
+    );
+  }
+
+  renderOrders(filtered);
+  updateOrderCount(filtered);
+}
+
+function populateOrderCategoryFilter() {
+  const select = document.getElementById("orderCategoryFilter");
+  if (!select) return;
+
+  fetch("/api/categories", { credentials: "include" })
+    .then(res => res.json())
+    .then(categories => {
+
+      select.innerHTML = `<option value="All">All Categories</option>`;
+
+      categories.forEach(cat => {
+        const option = document.createElement("option");
+        option.value = cat.name;
+        option.textContent = titleCase(cat.name);
+        select.appendChild(option);
+      });
+
+    })
+    .catch(() => console.error("Failed to load categories for order filter"));
+}
+
 function updateOrderStatus(orderId, status) {
   fetch(`/api/orders/update-status/${orderId}`, {
     method: "PUT",
@@ -190,6 +236,6 @@ function updateOrderStatus(orderId, status) {
   })
   .then(() => {
     loadOrders();
-    setTimeout(filterOrdersByStatus, 50);
+    setTimeout(filterOrdersByCategory, 50);
   });
 }

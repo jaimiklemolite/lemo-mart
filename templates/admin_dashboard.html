@@ -53,6 +53,9 @@
       <option value="Rejected">Rejected</option>
       <option value="Cancelled">Cancelled</option>
     </select>
+    <select id="orderCategoryFilter" onchange="filterOrdersByCategory()">
+      <option value="All">All Categories</option>
+    </select>
 
     <p id="orderCount" style="margin-top:10px;font-weight:500;"></p>
     <div id="adminOrders" class="admin-orders"></div>

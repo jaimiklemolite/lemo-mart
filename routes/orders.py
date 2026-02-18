@@ -35,6 +35,8 @@ def place_order():
         if not product:
             return jsonify({"message": "Product not found"}), 404
 
+        category = mongo.db.category.find_one({"_id": product.get("category_id")})
+
         if product.get("quantity", 0) < qty:
             return jsonify({
                 "message": f"Insufficient stock for {product['name']}"
@@ -65,7 +67,8 @@ def place_order():
             "name": product["name"],
             "price": product["price"],
             "qty": qty,
-            "image_url": snapshot_url
+            "image_url": snapshot_url,
+            "category": category["name"] if category else "Unknown"
         })
 
     now = datetime.utcnow()
@@ -105,13 +108,18 @@ def get_all_orders():
         user = mongo.db.users.find_one(
             {"_id": ObjectId(o["user_id"])}
         )
+        order_total = sum(item["price"] * item["qty"] for item in o["items"])
+        total_items = sum(item["qty"] for item in o["items"])
 
         orders.append({
             "id": str(o["_id"]),
             "order_number": o.get("order_number", str(o["_id"])),
             "username": user.get("username", "Unknown") if user else "Unknown",
+            "created_at": o["created_at"].isoformat(),
             "customer_email": user.get("email", "Unknown") if user else "Unknown",
             "items": o.get("items", []),
+            "order_total": order_total,
+            "total_items": total_items,
             "status": o.get("status"),
         })
 
