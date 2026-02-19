@@ -195,3 +195,26 @@ def cancel_order(order_id):
         }}
     )
     return jsonify({"order": order}), 200
+
+@order_bp.route("/last-update", methods=["GET"])
+@login_required(role="admin")
+def last_order_update():
+    latest = mongo.db.orders.find_one({}, sort=[("status_updated_at", -1)])
+
+    return jsonify({
+        "last_update": latest["status_updated_at"].isoformat() if latest else None
+    }), 200
+
+@order_bp.route("/user-last-update", methods=["GET"])
+@login_required()
+def user_last_order_update():
+    user_id = ObjectId(session.get("user_id"))
+
+    latest = mongo.db.orders.find_one(
+        {"user_id": user_id},
+        sort=[("status_updated_at", -1)]
+    )
+
+    return jsonify({
+        "last_update": latest["status_updated_at"].isoformat() if latest else None
+    }), 200

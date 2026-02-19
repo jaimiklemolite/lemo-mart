@@ -506,7 +506,7 @@ async function editProductById(productId) {
 
   } catch (err) {
     console.error("Template load error:", err);
-    showToast("Failed to load latest category template", "error");
+    showToast("Failed To Load Latest Category Template", "error");
   }
   openAdminTab("formTab");
 }
@@ -665,7 +665,7 @@ function validateImages(files) {
 
   for (let file of files) {
     if (!allowedTypes.includes(file.type)) {
-      showToast("Only JPG, PNG, WEBP images Allowed", "info");
+      showToast("Only JPG, PNG, WEBP Images Allowed", "info");
       return false;
     }
     if (file.size > maxSize) {
@@ -1238,12 +1238,26 @@ function openAdminTab(sectionId, btn) {
 
   if (btn) btn.classList.add("active");
 
-  if (sectionId === "usersSection" && !cachedUsers.length) {
-    loadUsers();
+  if (sectionId === "usersSection") {
+    if (!cachedUsers.length || usersNeedReload) {
+      loadUsers();
+      usersNeedReload = false;
+    }
   }
-
-  if (sectionId === "ordersSection" && !cachedOrders.length) {
-    loadOrders();
+  if (sectionId === "ordersSection") {
+    if (!cachedOrders.length || ordersNeedReload) {
+      loadOrders();
+      ordersNeedReload = false;
+    }
+    if (pendingNewOrders > 0) {
+      if (pendingNewOrders === 1) {
+        showToast("New Order Received", "info");
+      } else {
+        showToast("New Orders Received", "info");
+      }
+      pendingNewOrders = 0;
+      updateOrdersBadge();
+    }
   }
   if (sectionId === "analyticsSection") {
     const rangeSelect = document.getElementById("rangeSelect");

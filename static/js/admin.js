@@ -1,5 +1,10 @@
 let cachedUsers = [];
 let cachedOrders = [];
+let lastOrderUpdate = null;
+let lastOrderCount = 0;
+let pendingNewOrders = 0;
+let usersNeedReload = false;
+let ordersNeedReload = false;
 
 function capitalizeFirstLetter(str) {
   if (!str) return "";
@@ -58,6 +63,7 @@ function loadOrders() {
     }
 
     cachedOrders = sortOrdersByDate(data.orders);
+    lastOrderCount = cachedOrders.length;
     populateOrderCategoryFilter(); 
     renderOrders(cachedOrders);
     updateOrderCount(cachedOrders);
@@ -239,3 +245,89 @@ function updateOrderStatus(orderId, status) {
     setTimeout(filterOrdersByCategory, 50);
   });
 }
+
+function checkAdminOrderChanges() {
+  fetch("/api/orders/last-update", { credentials: "include" })
+    .then(res => res.json())
+    .then(data => {
+
+      if (!lastOrderUpdate) {
+        lastOrderUpdate = data.last_update;
+        return;
+      }
+
+      if (data.last_update !== lastOrderUpdate) {
+        lastOrderUpdate = data.last_update;
+
+        fetch("/api/orders/all", { credentials: "include" })
+          .then(res => res.json())
+          .then(newData => {
+
+            const newCount = (newData.orders || []).length;
+
+            if (newCount > lastOrderCount) {
+
+              const diff = newCount - lastOrderCount;
+              pendingNewOrders += diff;
+
+              ordersNeedReload = true;
+              usersNeedReload = true;
+
+              const ordersTabVisible =
+                !document.getElementById("ordersSection")
+                  ?.classList.contains("hidden");
+              const usersTabVisible =
+                !document.getElementById("usersSection")
+                  ?.classList.contains("hidden");
+
+              if (ordersTabVisible) {
+                loadOrders();
+                if (pendingNewOrders === 1) {
+                  showToast("New Order Received", "info");
+                } else {
+                  showToast("New Orders Received", "info");
+                }
+                pendingNewOrders = 0;
+                ordersNeedReload = false;
+                updateOrdersBadge();
+              }
+
+              if (usersTabVisible) {
+                loadUsers();
+                usersNeedReload = false;
+              }
+
+              if (!ordersTabVisible) {
+                updateOrdersBadge();
+              }
+            }
+            lastOrderCount = newCount;
+          });
+      }
+    })
+    .catch(() => {});
+}
+
+function updateOrdersBadge() {
+  const badge = document.getElementById("ordersBadge");
+  if (!badge) return;
+
+  if (pendingNewOrders > 0) {
+    badge.textContent = pendingNewOrders;
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (location.pathname === "/admin/dashboard") {
+    fetch("/api/orders/all", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => {
+        lastOrderCount = (data.orders || []).length;
+      });
+
+    setInterval(checkAdminOrderChanges, 5000);
+  }
+});

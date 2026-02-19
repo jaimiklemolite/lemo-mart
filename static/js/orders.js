@@ -1,10 +1,12 @@
 let cachedOrders = [];
+let lastUserOrderUpdate = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("ordersContainer");
   if (!container) return;
 
   loadOrders(container);
+  setInterval(checkUserOrderChanges, 5000);
 });
 
 function loadOrders(container) {
@@ -170,11 +172,33 @@ function cancelOrder(orderId) {
         const container = document.getElementById("ordersContainer");
         if (container) {
           loadOrders(container);
-          setTimeout(filterOrdersByCategory, 50);
         }
       });
     }
   );
+}
+
+function checkUserOrderChanges() {
+  fetch("/api/orders/user-last-update", { credentials: "include" })
+    .then(res => res.json())
+    .then(data => {
+
+      if (!lastUserOrderUpdate) {
+        lastUserOrderUpdate = data.last_update;
+        return;
+      }
+
+      if (data.last_update !== lastUserOrderUpdate) {
+        lastUserOrderUpdate = data.last_update;
+
+        const container = document.getElementById("ordersContainer");
+        if (container) {
+          loadOrders(container);
+          showToast("Order Status Updated", "info");
+        }
+      }
+    })
+    .catch(() => {});
 }
 
 function getStatusClass(status) {
