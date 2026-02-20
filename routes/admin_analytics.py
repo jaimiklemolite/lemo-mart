@@ -76,25 +76,6 @@ def get_summary():
 @admin_analytics_bp.route("/revenue-growth", methods=["GET"])
 @login_required(role="admin")
 def revenue_growth():
-    match_stage = parse_date_range()
-    pipeline = []
-
-    if match_stage:
-        pipeline.append(match_stage)
-
-    pipeline += [
-        {"$match": {"status": "Delivered"}},
-        {"$unwind": "$items"},
-        {
-            "$project": {
-                "date": "$created_at",
-                "amount": {"$multiply": ["$items.price", "$items.qty"]}
-            }
-        }
-    ]
-
-    data = list(mongo.db.orders.aggregate(pipeline))
-
     start = request.args.get("start")
     end = request.args.get("end")
 
@@ -108,10 +89,35 @@ def revenue_growth():
     prev_start = start_dt - range_duration
     prev_end = start_dt
 
-    current = sum(d["amount"] for d in data if start_dt <= d["date"] <= end_dt)
-    previous = sum(d["amount"] for d in data if prev_start <= d["date"] < prev_end)
+    pipeline = [
+        {"$match": {"status": "Delivered"}},
+        {"$unwind": "$items"},
+        {
+            "$project": {
+                "date": "$created_at",
+                "amount": {"$multiply": ["$items.price", "$items.qty"]}
+            }
+        }
+    ]
 
-    growth = round(((current - previous) / previous) * 100, 2) if previous > 0 else 0
+    data = list(mongo.db.orders.aggregate(pipeline))
+
+    current = sum(
+        d["amount"]
+        for d in data
+        if start_dt <= d["date"] <= end_dt
+    )
+
+    previous = sum(
+        d["amount"]
+        for d in data
+        if prev_start <= d["date"] < prev_end
+    )
+
+    if previous == 0:
+        growth = 100 if current > 0 else 0
+    else:
+        growth = round(((current - previous) / previous) * 100, 2)
 
     return jsonify({
         "current": current,

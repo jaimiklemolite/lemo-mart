@@ -54,7 +54,7 @@ def add_product():
             image.save(image_path)
 
             image_urls.append(
-                f"/static/uploads/{category_doc['name']}/{product_name}/{filename}"
+                f"/static/uploads/{category_name}/{product_name}/{filename}"
             )
 
     if not image_urls:
