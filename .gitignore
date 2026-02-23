@@ -2,5 +2,6 @@ __pycache__/
 *.pyc
 .env
 static/uploads/
+static/images/
 static/order_images/
 venv/

@@ -317,7 +317,6 @@ function loadProducts(showAdmin = false) {
         IS_ADMIN_PRODUCTS_PAGE,
         IS_DASHBOARD_PAGE && IS_ADMIN
       );
-
       if (!IS_ADMIN) {
         loadWishlistHearts();
       }
@@ -905,6 +904,106 @@ function applyFilters() {
     IS_ADMIN_PRODUCTS_PAGE,
     IS_DASHBOARD_PAGE && IS_ADMIN
   );
+
+  updateResultsCount(filtered.length, true);
+
+  const resetBtn = document.getElementById("resetFiltersBtn");
+  if (q || cat || sort) {
+    resetBtn.classList.remove("hidden");
+  } else {
+    resetBtn.classList.add("hidden");
+  }
+}
+
+function resetFilters() {
+
+  document.getElementById("categoryFilter").value = "";
+  document.getElementById("sortFilter").value = "";
+
+  const searchInput = document.getElementById("searchInput");
+  if (searchInput) searchInput.value = "";
+
+  document.querySelectorAll(".category-chip")
+    .forEach(chip => chip.classList.remove("active"));
+
+  document.getElementById("resetFiltersBtn")
+    .classList.add("hidden");
+
+  updateResultsCount(0, false);
+
+  renderProducts(
+    productCache,
+    IS_ADMIN_PRODUCTS_PAGE,
+    IS_DASHBOARD_PAGE && IS_ADMIN
+  );
+}
+
+function updateResultsCount(count, show = false) {
+  const el = document.getElementById("resultsCount");
+  if (!el) return;
+
+  if (!show) {
+    el.innerText = "";
+    el.classList.add("hidden");
+    return;
+  }
+
+  el.classList.remove("hidden");
+
+  if (count === 0) {
+    el.innerText = "No products found";
+  } else {
+    el.innerText = `${count} Products Found`;
+  }
+}
+
+function filterByCategory(categoryName) {
+  document.querySelectorAll(".category-chip")
+    .forEach(chip => chip.classList.remove("active"));
+
+  event?.target?.classList.add("active");
+  
+  const filtered = productCache.filter(p =>
+    p.category?.toLowerCase().includes(categoryName.toLowerCase())
+  );
+
+  renderProducts(
+    filtered,
+    IS_ADMIN_PRODUCTS_PAGE,
+    IS_DASHBOARD_PAGE && IS_ADMIN
+  );
+
+  updateResultsCount(filtered.length, true);
+
+  const resetBtn = document.getElementById("resetFiltersBtn");
+  if (resetBtn) resetBtn.classList.remove("hidden");
+
+  window.scrollTo({ top: 600, behavior: "smooth" });
+}
+
+function loadDashboardCategories() {
+  fetch("/api/categories")
+    .then(res => res.json())
+    .then(categories => {
+      const container = document.getElementById("dynamicCategories");
+      if (!container) return;
+
+      container.innerHTML = "";
+
+      categories.forEach(cat => {
+        const chip = document.createElement("div");
+        chip.className = "category-chip";
+
+        chip.innerHTML = `
+          <i class="fa-solid fa-tag"></i>${titleCase(cat.name)}
+        `;
+
+        chip.onclick = () => filterByCategory(cat.name);
+
+        container.appendChild(chip);
+      });
+    })
+    .catch(err => console.error("Failed to load dashboard categories:", err));
 }
 
 // FILTERS, DROPDOWN, LOAD TEMPLATES FOR CATEGORY
@@ -1280,6 +1379,7 @@ document.addEventListener("DOMContentLoaded", () => {
   handleHeaderIconsVisibility();
   updateCartCount();
   updateWishlistCount();
+  loadDashboardCategories();
   
   if (IS_ADMIN_PRODUCTS_PAGE) {
     loadCategoryDropdown();
