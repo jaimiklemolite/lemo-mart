@@ -525,7 +525,7 @@ function addProduct() {
   }
 
   if (!name || !price || !desc) {
-    showToast("Please Fill All Product Fields", "info");
+    showToast("Please Fill All Fields", "info");
     return;
   }
 
@@ -1002,8 +1002,37 @@ function loadDashboardCategories() {
 
         container.appendChild(chip);
       });
+      requestAnimationFrame(checkCategoryOverflow);
     })
     .catch(err => console.error("Failed to load dashboard categories:", err));
+}
+
+function scrollCategory(direction) {
+  const container = document.getElementById("dynamicCategories");
+  container.scrollBy({
+    left: direction * 250,
+    behavior: "smooth"
+  });
+}
+
+function checkCategoryOverflow() {
+  const container = document.getElementById("dynamicCategories");
+  const leftArrow = document.getElementById("leftArrow");
+  const rightArrow = document.getElementById("rightArrow");
+
+  if (!container || !leftArrow || !rightArrow) return;
+
+  const isOverflowing = container.scrollWidth > container.clientWidth;
+
+  if (isOverflowing) {
+    container.classList.remove("centered");
+    leftArrow.style.display = "block";
+    rightArrow.style.display = "block";
+  } else {
+    container.classList.add("centered");
+    leftArrow.style.display = "none";
+    rightArrow.style.display = "none";
+  }
 }
 
 // FILTERS, DROPDOWN, LOAD TEMPLATES FOR CATEGORY
