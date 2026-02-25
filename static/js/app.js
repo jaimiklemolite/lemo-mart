@@ -906,36 +906,110 @@ function applyFilters() {
   );
 
   updateResultsCount(filtered.length, true);
-
-  const resetBtn = document.getElementById("resetFiltersBtn");
-  if (q || cat || sort) {
-    resetBtn.classList.remove("hidden");
-  } else {
-    resetBtn.classList.add("hidden");
-  }
+  updateResetButtonVisibility("mainDashboard");
 }
 
-function resetFilters() {
+function resetFilters(btn) {
+  const sectionId = btn.dataset.section;
+  if (!sectionId) return;
 
-  document.getElementById("categoryFilter").value = "";
-  document.getElementById("sortFilter").value = "";
+  if (sectionId === "mainDashboard") {
 
-  const searchInput = document.getElementById("searchInput");
-  if (searchInput) searchInput.value = "";
+    const searchInput = document.getElementById("searchInput");
+    if (searchInput) searchInput.value = "";
+    const category = document.getElementById("categoryFilter");
+    const sort = document.getElementById("sortFilter");
 
-  document.querySelectorAll(".category-chip")
-    .forEach(chip => chip.classList.remove("active"));
+    if (category) category.value = "";
+    if (sort) sort.value = "";
 
-  document.getElementById("resetFiltersBtn")
-    .classList.add("hidden");
+    document.querySelectorAll(".category-chip")
+      .forEach(chip => chip.classList.remove("active"));
 
-  updateResultsCount(0, false);
+    renderProducts(
+      productCache,
+      IS_ADMIN_PRODUCTS_PAGE,
+      IS_DASHBOARD_PAGE && IS_ADMIN
+    );
+    updateResultsCount(0, false);
+  }
 
-  renderProducts(
-    productCache,
-    IS_ADMIN_PRODUCTS_PAGE,
-    IS_DASHBOARD_PAGE && IS_ADMIN
-  );
+  else if (sectionId === "ordersSection") {
+    const status = document.getElementById("orderStatusFilter");
+    const category = document.getElementById("orderCategoryFilter");
+
+    if (status) status.value = "All";
+    if (category) category.value = "All";
+
+    filterOrdersByCategory();
+  }
+
+  else if (sectionId === "analyticsSection") {
+    const rangeSelect = document.getElementById("rangeSelect");
+    const start = document.getElementById("startDate");
+    const end = document.getElementById("endDate");
+
+    if (rangeSelect) rangeSelect.value = "7";
+
+    if (start) {
+      start.value = "";
+      start.hidden = true;
+    }
+
+    if (end) {
+      end.value = "";
+      end.hidden = true;
+    }
+    onRangeChange();
+  }
+  btn.classList.add("hidden");
+}
+
+function updateResetButtonVisibility(sectionId) {
+  const section = document.getElementById(sectionId);
+  if (!section) return;
+  const btn = section.querySelector(".reset-btn");
+  if (!btn) return;
+
+  let hasActiveFilter = false;
+
+  if (sectionId === "mainDashboard") {
+
+    const searchVal =
+      document.getElementById("searchInput")?.value.trim();
+    const categoryVal =
+      document.getElementById("categoryFilter")?.value;
+    const sortVal =
+      document.getElementById("sortFilter")?.value;
+    const activeChip =
+      document.querySelector(".category-chip.active");
+    if (searchVal || categoryVal || sortVal || activeChip) {
+      hasActiveFilter = true;
+    }
+  }
+
+  else if (sectionId === "analyticsSection") {
+    const rangeVal =
+      document.getElementById("rangeSelect")?.value;
+    if (rangeVal !== "7") {
+      hasActiveFilter = true;
+    }
+  }
+
+  else if (sectionId === "ordersSection") {
+    const status =
+      document.getElementById("orderStatusFilter")?.value;
+    const category =
+      document.getElementById("orderCategoryFilter")?.value;
+    if (status !== "All" || category !== "All") {
+      hasActiveFilter = true;
+    }
+  }
+  if (hasActiveFilter) {
+    btn.classList.remove("hidden");
+  } else {
+    btn.classList.add("hidden");
+  }
 }
 
 function updateResultsCount(count, show = false) {
@@ -974,9 +1048,7 @@ function filterByCategory(categoryName) {
   );
 
   updateResultsCount(filtered.length, true);
-
-  const resetBtn = document.getElementById("resetFiltersBtn");
-  if (resetBtn) resetBtn.classList.remove("hidden");
+  updateResetButtonVisibility("mainDashboard");
 
   window.scrollTo({ top: 600, behavior: "smooth" });
 }
@@ -1373,6 +1445,7 @@ function openAdminTab(sectionId, btn) {
     }
   }
   if (sectionId === "ordersSection") {
+    sessionStorage.setItem("adminLastSeenOrderCount", lastOrderCount);
     if (!cachedOrders.length || ordersNeedReload) {
       loadOrders();
       ordersNeedReload = false;
@@ -1412,11 +1485,6 @@ document.addEventListener("DOMContentLoaded", () => {
   
   if (IS_ADMIN_PRODUCTS_PAGE) {
     loadCategoryDropdown();
-  }
-
-  if (location.pathname === "/admin/dashboard") {
-    const tab = getTabFromURL("usersSection");
-    openAdminTab(tab);
   }
 
   if (location.pathname !== "/wishlist") {

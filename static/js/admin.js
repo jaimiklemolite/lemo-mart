@@ -84,10 +84,19 @@ function renderOrders(orders) {
 
       <div class="admin-order-left">
         <div class="admin-order-meta">
-          <p><strong>Order ID:</strong> ${order.order_number}</p>
-          <p><strong>Username:</strong> ${order.username}</p>
-          <p><strong>Customer Email:</strong> ${order.customer_email}</p>
-          <p><strong>Order Date:</strong> ${new Date(order.created_at).toLocaleDateString()}</p>
+          <div class="order-header-top">
+            <span class="order-id">${order.order_number}</span>
+            <span class="order-date">
+              ${new Date(order.created_at).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric"
+              })}
+            </span>
+          </div>
+          <div class="order-user">
+            ${order.username} • ${order.customer_email}
+          </div>
           <p><strong>Total Items:</strong> ${order.total_items}</p>
           <p class="admin-order-total" style="font-weight: 500;color: #0f766e;">
             <strong>Order Total:</strong> ₹${order.order_total?.toLocaleString("en-IN") || 0}
@@ -210,6 +219,7 @@ function filterOrdersByCategory() {
 
   renderOrders(filtered);
   updateOrderCount(filtered);
+  updateResetButtonVisibility("ordersSection");
 }
 
 function populateOrderCategoryFilter() {
@@ -265,28 +275,36 @@ function checkAdminOrderChanges() {
 
             const newCount = (newData.orders || []).length;
 
-            if (newCount > lastOrderCount) {
+            const lastSeen = parseInt(
+              sessionStorage.getItem("adminLastSeenOrderCount") || 0
+            );
 
-              const diff = newCount - lastOrderCount;
-              pendingNewOrders += diff;
+            if (newCount > lastSeen) {
 
+              pendingNewOrders = newCount - lastSeen;
               ordersNeedReload = true;
               usersNeedReload = true;
 
               const ordersTabVisible =
                 !document.getElementById("ordersSection")
                   ?.classList.contains("hidden");
+
               const usersTabVisible =
                 !document.getElementById("usersSection")
                   ?.classList.contains("hidden");
 
               if (ordersTabVisible) {
+
                 loadOrders();
+
                 if (pendingNewOrders === 1) {
                   showToast("New Order Received", "info");
                 } else {
                   showToast("New Orders Received", "info");
                 }
+
+                sessionStorage.setItem("adminLastSeenOrderCount", newCount);
+
                 pendingNewOrders = 0;
                 ordersNeedReload = false;
                 updateOrdersBadge();
@@ -301,7 +319,9 @@ function checkAdminOrderChanges() {
                 updateOrdersBadge();
               }
             }
+
             lastOrderCount = newCount;
+            sessionStorage.setItem("adminLastOrderCount", newCount);
           });
       }
     })
@@ -322,12 +342,37 @@ function updateOrdersBadge() {
 
 document.addEventListener("DOMContentLoaded", () => {
   if (location.pathname === "/admin/dashboard") {
+
     fetch("/api/orders/all", { credentials: "include" })
       .then(res => res.json())
       .then(data => {
-        lastOrderCount = (data.orders || []).length;
-      });
 
-    setInterval(checkAdminOrderChanges, 5000);
+        const currentCount = (data.orders || []).length;
+
+        let lastSeen = sessionStorage.getItem("adminLastSeenOrderCount");
+
+        if (lastSeen === null) {
+          sessionStorage.setItem("adminLastSeenOrderCount", currentCount);
+          pendingNewOrders = 0;
+        } else {
+
+          lastSeen = parseInt(lastSeen);
+
+          if (currentCount > lastSeen) {
+            pendingNewOrders = currentCount - lastSeen;
+          } else {
+            pendingNewOrders = 0;
+          }
+        }
+
+        updateOrdersBadge();
+        lastOrderCount = currentCount;
+        sessionStorage.setItem("adminLastOrderCount", currentCount);
+
+        const tab = getTabFromURL("usersSection");
+        openAdminTab(tab);
+
+        setInterval(checkAdminOrderChanges, 5000);
+      });
   }
 });

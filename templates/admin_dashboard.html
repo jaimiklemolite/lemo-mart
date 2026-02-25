@@ -19,7 +19,7 @@
   </div>
 
   <h2>Admin Dashboard</h2>
-
+  <hr>
   <div class="admin-tabs">
 
     <button class="tab-btn active"
@@ -56,7 +56,11 @@
     <select id="orderCategoryFilter" onchange="filterOrdersByCategory()">
       <option value="All">All Categories</option>
     </select>
-
+    <button class="reset-btn hidden"
+            data-section="ordersSection"
+            onclick="resetFilters(this)">
+      RESET
+    </button>
     <p id="orderCount" style="margin-top:10px;font-weight:500;"></p>
     <div id="adminOrders" class="admin-orders"></div>
   </div>
@@ -75,7 +79,11 @@
 
       <input type="date" id="startDate" onchange="onCustomDateChange()" hidden>
       <input type="date" id="endDate" onchange="onCustomDateChange()" hidden>
-
+      <button class="reset-btn hidden"
+              data-section="analyticsSection"
+              onclick="resetFilters(this)">
+        RESET
+      </button>
     </div>
 
     <div id="summaryCards" class="analytics-cards"></div>

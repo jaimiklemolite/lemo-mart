@@ -50,7 +50,7 @@
 
   </div>
 
-  <section class="filter-bar">
+  <section id="mainDashboard" class="filter-bar">
     <select id="categoryFilter" onchange="applyFilters()">
       <option value="">All Categories</option>
     </select>
@@ -62,13 +62,11 @@
       <option value="price_asc">Price (Low → High)</option>
       <option value="price_desc">Price (High → Low)</option>
     </select>
-
-    <button id="resetFiltersBtn"
-            class="reset-btn hidden"
-            onclick="resetFilters()">
+    <button class="reset-btn hidden"
+            data-section="mainDashboard"
+            onclick="resetFilters(this)">
       RESET
     </button>
-
   </section>
   <hr>
   <span id="resultsCount" style="margin-left:auto;font-weight:600;"></span>

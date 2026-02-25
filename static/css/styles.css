@@ -430,6 +430,27 @@ body > *:not(.app-footer) {
   transform: scale(0.96);
 }
 
+.cancel-btn{
+  background: #e53935;
+  color: #ffffff;
+  border: none;
+  border-radius: 40px;
+  padding: 10px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.cancel-btn:hover {
+  opacity: 0.9;
+  background: #111827;
+  color: #ffffff;
+  border-color: #111827;
+  transform: translateY(-2px);
+  transform: scale(0.96);
+}
+
 .product-btn {
   border-radius: 10px;
   padding: 10px 15px;
@@ -1534,22 +1555,6 @@ select:focus {
   background: #fcdcd8;
 }
 
-.cancel-btn{
-  background: linear-gradient(180deg, #e53935, #c62828);
-  color: #ffffff;
-  border: none;
-  border-radius: 40px;
-  padding: 10px 28px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.cancel-btn:hover {
-  opacity: 0.9;
-}
-
 /* ADMIN TABLE */
 table {
   width: 100%;
@@ -1612,8 +1617,32 @@ tr:hover {
   gap: 14px;
 }
 
+.order-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-id {
+  margin: 0 0 5px;
+  font-weight: 600;
+  font-size: 15px;
+  color: #111;
+}
+
+.order-date {
+  font-size: 15px;
+  color: #6b7280;
+}
+
+.order-user {
+  margin: 0 0 5px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
 .admin-order-meta p {
-  margin: 0 0 6px;
+  margin: 0 0 5px;
   font-size: 14px;
   color: #333;
 }
@@ -1650,21 +1679,6 @@ tr:hover {
   border-radius: 20px;
   font-size: 14px;
   font-weight: 600;
-}
-
-.order-status-badge.pending {
-  background: #e8f4ff;
-  color: #1976d2;
-}
-
-.order-status-badge.approved {
-  background: #fff8e1;
-  color: #f9a825;
-}
-
-.order-status-badge.out-for-delivery {
-  background: #fff3e0;
-  color: #ef6c00;
 }
 
 .order-status-badge.delivered {
@@ -2176,9 +2190,10 @@ tr:hover {
 }
 
 .analytics-card {
+  position: relative;
   background: #ffffff;
   border-radius: 14px;
-  padding: 18px;
+  padding: 18px 60px 18px 18px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
   border: 1px solid #f1f1f1;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -2190,9 +2205,9 @@ tr:hover {
 }
 
 .analytics-card h4 {
-  font-size: 14px;
+  font-size: 16px;
   color: #666;
-  margin-bottom: 8px;
+  margin-top: 4px;
   font-weight: 500;
 }
 
@@ -2207,6 +2222,42 @@ tr:hover {
   display: block;
   margin-top: 6px;
   font-size: 13px;
+}
+
+/* ICON TOP RIGHT */
+.card-icon {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: white;
+  opacity: 0.9;
+}
+
+.card-icon.revenue {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+}
+
+.card-icon.net {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+}
+
+.card-icon.growth {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+}
+
+.card-icon.orders {
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+}
+
+.card-icon.items {
+  background: linear-gradient(135deg, #ef4444, #f87171);
 }
 
 /* CHART GRID */

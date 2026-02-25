@@ -40,6 +40,7 @@ function onRangeChange() {
   endDate = end.toISOString();
 
   loadAnalyticsDashboard();
+  updateResetButtonVisibility("analyticsSection");
 }
 
 function onCustomDateChange() {
@@ -52,6 +53,7 @@ function onCustomDateChange() {
   endDate = new Date(e).toISOString();
 
   loadAnalyticsDashboard();
+  updateResetButtonVisibility("analyticsSection");
 }
 
 function animateValue(el, start, end, duration = 900, isCurrency = true) {
@@ -108,16 +110,25 @@ function loadSummary() {
 
     document.getElementById("summaryCards").innerHTML = `
       <div class="analytics-card">
+        <div class="card-icon revenue">
+          <i class="fa-solid fa-sack-dollar"></i>
+        </div>
         <h4>Gross Revenue</h4>
         <p id="grossRevenue">₹0</p>
       </div>
 
       <div class="analytics-card">
+        <div class="card-icon net">
+          <i class="fa-solid fa-coins"></i>
+        </div>
         <h4>Net Revenue</h4>
         <p id="netRevenue">₹0</p>
       </div>
 
       <div class="analytics-card">
+        <div class="card-icon growth">
+          <i class="fa-solid fa-chart-line"></i>
+        </div>
         <h4>Revenue Growth (${label})</h4>
         <p id="growthRevenue">₹0</p>
         <small style="color:${color}; font-weight:600;">
@@ -126,11 +137,17 @@ function loadSummary() {
       </div>
 
       <div class="analytics-card">
+        <div class="card-icon orders">
+          <i class="fa-solid fa-box-open"></i>
+        </div>
         <h4>Total Delivered Orders</h4>
         <p id="totalOrders">0</p>
       </div>
 
       <div class="analytics-card">
+        <div class="card-icon items">
+          <i class="fa-solid fa-cart-shopping"></i>
+        </div>
         <h4>Total Items Sold</h4>
         <p id="soldItems">0</p>
       </div>
