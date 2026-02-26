@@ -452,6 +452,27 @@ async function editProductById(productId) {
   document.getElementById("price").value = p.price || "";
   document.getElementById("description").value = p.description || "";
 
+  const startInput = document.getElementById("featuredStart");
+  const endInput = document.getElementById("featuredEnd");
+
+  if (startInput && p.featured_start) {
+    try {
+      const startDate = new Date(p.featured_start);
+      startInput.value = startDate.toISOString().slice(0,16);
+    } catch (e) {
+      console.error("Start date parse error:", e);
+    }
+  }
+
+  if (endInput && p.featured_end) {
+    try {
+      const endDate = new Date(p.featured_end);
+      endInput.value = endDate.toISOString().slice(0,16);
+    } catch (e) {
+      console.error("End date parse error:", e);
+    }
+  }
+  
   const categorySelect = document.getElementById("categorySelect");
   if (categorySelect && p.category_id) {
     categorySelect.value = p.category_id;
@@ -534,6 +555,17 @@ function addProduct() {
   fd.append("description", desc);
   fd.append("category_id", categoryId);
 
+  const start = document.getElementById("featuredStart").value;
+  const end = document.getElementById("featuredEnd").value;
+
+  if (start && end) {
+    fd.append("featured_start", new Date(start).toISOString());
+    fd.append("featured_end", new Date(end).toISOString());
+      } else {
+    fd.append("featured_start", "");
+    fd.append("featured_end", "");
+  }
+
   const specs = collectProductSpecs();
   fd.append("specs", JSON.stringify(specs));
 
@@ -588,6 +620,17 @@ function updateProduct() {
 
   const categoryId = document.getElementById("categorySelect").value;
   if (categoryId) fd.append("category_id", categoryId);
+
+  const start = document.getElementById("featuredStart").value;
+  const end = document.getElementById("featuredEnd").value;
+
+  if (start && end) {
+    fd.append("featured_start", new Date(start).toISOString());
+    fd.append("featured_end", new Date(end).toISOString());
+  } else {
+    fd.append("featured_start", "");
+    fd.append("featured_end", "");
+  }
 
   const specs = collectProductSpecs();
   fd.append("specs", JSON.stringify(specs));
@@ -709,6 +752,12 @@ function clearForm() {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
+  
+  const startInput = document.getElementById("featuredStart");
+  const endInput = document.getElementById("featuredEnd");
+
+  if (startInput) startInput.value = "";
+  if (endInput) endInput.value = "";
 
   const categorySelect = document.getElementById("categorySelect");
   if (categorySelect) {
@@ -1050,7 +1099,7 @@ function filterByCategory(categoryName) {
   updateResultsCount(filtered.length, true);
   updateResetButtonVisibility("mainDashboard");
 
-  window.scrollTo({ top: 600, behavior: "smooth" });
+  window.scrollTo({ top: 2400, behavior: "smooth" });
 }
 
 function loadDashboardCategories() {
@@ -1476,6 +1525,125 @@ function getTabFromURL(defaultTab) {
   return params.get("tab") || defaultTab;
 }
 
+function loadFeaturedProducts() {
+  fetch("/api/products/featured")
+    .then(res => res.json())
+    .then(data => {
+      const container = document.getElementById("featuredProducts");
+      if (!container) return;
+
+      container.innerHTML = data.map(p => `
+        <div class="editorial-card"
+             onclick="viewProduct('${p._id}')">
+          <img src="${p.image_url}">
+          <div class="editorial-info">
+            <h4>${p.name}</h4>
+            <div class="price">
+              ₹${p.price.toLocaleString("en-IN")}
+            </div>
+          </div>
+        </div>
+      `).join("");
+      if (container.innerHTML !== newHTML) {
+        container.style.opacity = "0.5";
+
+        setTimeout(() => {
+          container.innerHTML = newHTML;
+          container.style.opacity = "1";
+        }, 200);
+      }
+    });
+}
+
+function loadTopProducts() {
+  fetch("/api/products/top-selling")
+    .then(res => res.json())
+    .then(data => {
+      const container = document.getElementById("topProducts");
+      if (!container) return;
+
+      container.innerHTML = data.map(p => `
+        <div class="mini-card ${p.quantity === 0 ? 'sold-out' : ''}"
+            onclick="${p.quantity === 0 ? '' : `viewProduct('${p._id}')`}">
+
+          <div class="mini-img-wrapper">
+            <img src="${p.image_url || p.images?.[0]}">
+
+            ${p.quantity === 0 ? `
+              <div class="stock-overlay">Out Of Stock</div>
+            ` : ``}
+          </div>
+
+          <div class="mini-info">
+            <div>${p.name}</div>
+            <div class="price">₹${p.price.toLocaleString("en-IN")}</div>
+          </div>
+        </div>
+      `).join("");
+    });
+}
+
+function loadNewArrivals() {
+  fetch("/api/products/new-arrivals")
+    .then(res => res.json())
+    .then(data => {
+      const container = document.getElementById("newProducts");
+      if (!container) return;
+
+      container.innerHTML = data.map(p => `
+        <div class="editorial-card"
+             onclick="viewProduct('${p._id}')">
+          <img src="${p.image_url || p.images?.[0]}" />
+          <div class="editorial-info">
+            <h4>${p.name}</h4>
+            <div class="category">${p.description}</div>
+            <div class="price">
+              ₹${p.price.toLocaleString("en-IN")}
+            </div>
+          </div>
+        </div>
+      `).join("");
+    });
+}
+
+function scrollNewArrivals(direction) {
+  const container = document.getElementById("newProducts");
+  const card = container.querySelector(".editorial-card");
+
+  if (!card) return;
+
+  const style = window.getComputedStyle(container);
+  const gap = parseInt(style.columnGap || style.gap || 0);
+
+  const scrollAmount = (card.offsetWidth + gap) * 4;
+  const maxScrollLeft = container.scrollWidth - container.clientWidth;
+
+  if (direction === 1) {
+    if (container.scrollLeft >= maxScrollLeft - 5) {
+      container.scrollTo({
+        left: 0,
+        behavior: "smooth"
+      });
+      return;
+    }
+  }
+
+  if (direction === -1) {
+    if (container.scrollLeft <= 5) {
+      container.scrollTo({
+        left: maxScrollLeft,
+        behavior: "smooth"
+      });
+      return;
+    }
+  }
+
+  container.scrollBy({
+    left: direction * scrollAmount,
+    behavior: "smooth"
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   loadProfileDropdown();
   handleHeaderIconsVisibility();
@@ -1485,6 +1653,16 @@ document.addEventListener("DOMContentLoaded", () => {
   
   if (IS_ADMIN_PRODUCTS_PAGE) {
     loadCategoryDropdown();
+  }
+
+  if (location.pathname === "/dashboard") {
+    loadFeaturedProducts();
+    loadTopProducts();
+    loadNewArrivals();
+    
+    setInterval(() => {
+      loadFeaturedProducts();
+    }, 20000);
   }
 
   if (location.pathname !== "/wishlist") {

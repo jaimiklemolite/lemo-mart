@@ -36,6 +36,44 @@
     </div>
   </section>
 
+  <!-- ⭐ FEATURED -->
+  <section class="home-section alt-section">
+    <div class="section-header">
+      <h2>Featured Products</h2>
+    </div>
+    <div id="featuredProducts" class="featured-grid"></div>
+  </section>
+
+  <!-- 🔥 TOP SELLING -->
+  <section class="home-section alt-section">
+    <div class="section-header">
+      <h2>Top Selling</h2>
+    </div>
+    <div id="topProducts" class="horizontal-scroll"></div>
+  </section>
+
+  <!-- 🆕 NEW ARRIVALS -->
+  <section class="home-section alt-section">
+    <div class="section-header">
+      <h2>New Arrivals</h2>
+    </div>
+
+    <div class="editorial-wrapper">
+      
+      <button class="editorial-arrow left"
+              onclick="scrollNewArrivals(-1)">
+        <i class="fa fa-chevron-left"></i>
+      </button>
+
+      <div id="newProducts" class="editorial-grid"></div>
+
+      <button class="editorial-arrow right"
+              onclick="scrollNewArrivals(1)">
+        <i class="fa fa-chevron-right"></i>
+      </button>
+
+    </div>
+  </section>
   <div class="category-wrapper">
 
     <button class="scroll-btn" id="leftArrow" onclick="scrollCategory(-1)">

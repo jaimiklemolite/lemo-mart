@@ -4,10 +4,10 @@ from bson.errors import InvalidId
 from extension import mongo
 from utils import login_required
 from routes.utils import title_case, slugify
+from datetime import datetime
 import os
 import uuid
 import json
-import re
 
 product_bp = Blueprint("products", __name__, url_prefix="/api/products")
 
@@ -25,6 +25,16 @@ def add_product():
 
     details = request.form.get("details")
     details = json.loads(details) if details else []
+
+    featured_start = request.form.get("featured_start")
+    featured_end = request.form.get("featured_end")
+
+    if featured_start and featured_end:
+        featured_start = datetime.fromisoformat(featured_start)
+        featured_end = datetime.fromisoformat(featured_end)
+    else:
+        featured_start = None
+        featured_end = None
 
     if not name or not price or not category_id or not desc_ or not images:
         return jsonify({"message": "All fields required"}), 400
@@ -59,6 +69,8 @@ def add_product():
 
     if not image_urls:
         return jsonify({"message": "Image upload failed"}), 400
+    
+    now = datetime.utcnow()
 
     result = mongo.db.products.insert_one({
         "name": name,
@@ -69,7 +81,10 @@ def add_product():
         "image_url": image_urls[0],
         "quantity": 0,
         "specs": specs,
-        "details": details
+        "details": details,
+        "created_at": now,
+        "featured_start": featured_start,
+        "featured_end": featured_end,
     })
 
     product = mongo.db.products.find_one({"_id": result.inserted_id})
@@ -210,6 +225,16 @@ def update_product(product_id):
     if details is not None:
         update_data["details"] = json.loads(details)
 
+    featured_start = request.form.get("featured_start")
+    featured_end = request.form.get("featured_end")
+
+    if featured_start and featured_end:
+        update_data["featured_start"] = datetime.fromisoformat(featured_start)
+        update_data["featured_end"] = datetime.fromisoformat(featured_end)
+    else:
+        update_data["featured_start"] = None
+        update_data["featured_end"] = None
+
     if images and images[0].filename:
 
         for old_img in product.get("images", []):
@@ -293,3 +318,69 @@ def delete_product(product_id):
     mongo.db.products.delete_one({"_id": ObjectId(product_id)})
 
     return jsonify({"message": "Product deleted successfully"}), 200
+
+@product_bp.route("/featured", methods=["GET"])
+def get_featured_products():
+
+    now = datetime.utcnow()
+
+    products = []
+
+    cursor = mongo.db.products.find({
+        "featured_start": {"$lte": now},
+        "featured_end": {"$gte": now},
+    }).limit(8)
+
+    for p in cursor:
+        p["_id"] = str(p["_id"])
+        products.append(p)
+
+    return jsonify(products), 200
+
+@product_bp.route("/new-arrivals", methods=["GET"])
+def get_new_arrivals():
+    products = list(
+        mongo.db.products.find()
+        .sort("created_at", -1)
+        .limit(8)
+    )
+
+    for p in products:
+        p["_id"] = str(p["_id"])
+
+    return jsonify(products), 200
+
+@product_bp.route("/top-selling", methods=["GET"])
+def get_top_selling():
+
+    pipeline = [
+        {"$unwind": "$items"},
+        {"$group": {
+            "_id": "$items.product_id",
+            "totalSold": {"$sum": "$items.qty"}
+        }},
+        {"$sort": {"totalSold": -1}},
+        {"$limit": 8}
+    ]
+
+    top = list(mongo.db.orders.aggregate(pipeline))
+
+    if not top:
+        return jsonify([]), 200
+
+    ordered_ids = [p["_id"] for p in top]
+
+    products = list(
+        mongo.db.products.find({"_id": {"$in": ordered_ids}})
+    )
+
+    product_map = {p["_id"]: p for p in products}
+
+    sorted_products = []
+    for pid in ordered_ids:
+        if pid in product_map:
+            product = product_map[pid]
+            product["_id"] = str(product["_id"])
+            sorted_products.append(product)
+
+    return jsonify(sorted_products), 200
