@@ -39,6 +39,11 @@
       Categories
     </button>
 
+    <button class="tab-btn"
+            onclick="openAdminTab('campaignTab', this)">
+      Campaigns
+    </button>
+
   </div>
 
   <div id="productsTab" class="admin-section">
@@ -56,15 +61,6 @@
     <input id="images" type="file" multiple accept="image/*" onchange="previewImages()">
 
     <select id="categorySelect" name="category_id"></select>
-
-    <div style="margin-top:15px;">
-      <h3>Featured Campaign Schedule</h3>
-      <label>Featured Start:</label>
-      <input type="datetime-local" id="featuredStart">
-
-      <label style="margin-left:10px;">Featured End:</label>
-      <input type="datetime-local" id="featuredEnd">
-    </div>
 
     <div id="imagePreview" class="image-preview"></div>
 
@@ -172,6 +168,79 @@
     </div>
 
     <div id="categoryGrid" class="category-grid"></div>
+
+  </div>
+
+  <div id="campaignTab" class="admin-section hidden">
+    <div class="campaign-create">
+      <h2>Create Campaign</h2>
+      <select id="campaignCategory"
+              onchange="loadCampaignProductsByCategory()">
+        <option value="">Select Category</option>
+      </select>
+
+      <select id="campaignProduct">
+        <option value="">Select Product</option>
+      </select>
+
+      <input type="text"
+            id="campaignTitle"
+            placeholder="Campaign Title">
+
+      <input type="datetime-local" id="campaignStart">
+      <input type="datetime-local" id="campaignEnd">
+
+      <button class="product-btn"
+              onclick="createCampaign()">
+        Create Campaign
+      </button>
+
+    </div>
+
+    <h3>Active Campaigns</h3>
+    <div class="campaign-stats">
+      <div class="campaign-card">
+        <span>Live Campaigns</span>
+        <b id="liveCampaignCount">0</b>
+      </div>
+
+      <div class="campaign-card">
+        <span>Scheduled</span>
+        <b id="scheduledCampaignCount">0</b>
+      </div>
+
+      <div class="campaign-card">
+        <span>Expired</span>
+        <b id="expiredCampaignCount">0</b>
+      </div>
+    </div>
+
+    <!-- Campaign Tabs -->
+    <div class="campaign-tabs">
+
+      <button class="campaign-tab active"
+              onclick="switchCampaignTab('ALL', this)">
+        All (<span id="tabAllCount">0</span>)
+      </button>
+
+      <button class="campaign-tab"
+              onclick="switchCampaignTab('LIVE', this)">
+        Live (<span id="tabLiveCount">0</span>)
+      </button>
+
+      <button class="campaign-tab"
+              onclick="switchCampaignTab('SCHEDULED', this)">
+        Scheduled (<span id="tabScheduledCount">0</span>)
+      </button>
+
+      <button class="campaign-tab"
+              onclick="switchCampaignTab('EXPIRED', this)">
+        Expired (<span id="tabExpiredCount">0</span>)
+      </button>
+
+    </div>
+
+    <div id="campaignList" class="campaign-list"></div>
 
   </div>
 

@@ -26,16 +26,6 @@ def add_product():
     details = request.form.get("details")
     details = json.loads(details) if details else []
 
-    featured_start = request.form.get("featured_start")
-    featured_end = request.form.get("featured_end")
-
-    if featured_start and featured_end:
-        featured_start = datetime.fromisoformat(featured_start)
-        featured_end = datetime.fromisoformat(featured_end)
-    else:
-        featured_start = None
-        featured_end = None
-
     if not name or not price or not category_id or not desc_ or not images:
         return jsonify({"message": "All fields required"}), 400
 
@@ -82,9 +72,7 @@ def add_product():
         "quantity": 0,
         "specs": specs,
         "details": details,
-        "created_at": now,
-        "featured_start": featured_start,
-        "featured_end": featured_end,
+        "created_at": now
     })
 
     product = mongo.db.products.find_one({"_id": result.inserted_id})
@@ -225,16 +213,6 @@ def update_product(product_id):
     if details is not None:
         update_data["details"] = json.loads(details)
 
-    featured_start = request.form.get("featured_start")
-    featured_end = request.form.get("featured_end")
-
-    if featured_start and featured_end:
-        update_data["featured_start"] = datetime.fromisoformat(featured_start)
-        update_data["featured_end"] = datetime.fromisoformat(featured_end)
-    else:
-        update_data["featured_start"] = None
-        update_data["featured_end"] = None
-
     if images and images[0].filename:
 
         for old_img in product.get("images", []):
@@ -319,23 +297,136 @@ def delete_product(product_id):
 
     return jsonify({"message": "Product deleted successfully"}), 200
 
-@product_bp.route("/featured", methods=["GET"])
-def get_featured_products():
+@product_bp.route("/campaigns/create", methods=["POST"])
+@login_required(role="admin")
+def create_campaign():
+
+    data = request.get_json()
+
+    product_id = data.get("product_id")
+    start = data.get("start")
+    end = data.get("end")
+    title = data.get("title")
+    priority = data.get("priority", "MEDIUM")
+
+    if not product_id or not start or not end:
+        return jsonify({"message": "Missing fields"}), 400
+
+    mongo.db.campaigns.insert_one({
+        "product_id": ObjectId(product_id),
+        "title": title or "Featured Campaign",
+        "priority": priority,
+        "start": datetime.fromisoformat(start),
+        "end": datetime.fromisoformat(end),
+        "created_at": datetime.utcnow()
+    })
+
+    return jsonify({"message": "Campaign created"})
+
+@product_bp.route("/campaigns", methods=["GET"])
+@login_required(role="admin")
+def get_campaigns():
 
     now = datetime.utcnow()
 
+    pipeline = [
+        {
+            "$lookup": {
+                "from": "products",
+                "localField": "product_id",
+                "foreignField": "_id",
+                "as": "product"
+            }
+        },
+        {"$unwind": "$product"},
+        {
+            "$lookup": {
+                "from": "category",
+                "localField": "product.category_id",
+                "foreignField": "_id",
+                "as": "category"
+            }
+        },
+        {"$unwind": {"path": "$category", "preserveNullAndEmptyArrays": True}},
+        {"$sort": {"start": -1}}
+    ]
+
+    campaigns = list(mongo.db.campaigns.aggregate(pipeline))
+
+    result = []
+
+    for c in campaigns:
+
+        status = "EXPIRED"
+
+        if c["start"] <= now <= c["end"]:
+            status = "LIVE"
+        elif now < c["start"]:
+            status = "SCHEDULED"
+
+        result.append({
+            "id": str(c["_id"]),
+            "product_id": str(c["product"]["_id"]),
+            "name": c["product"]["name"],
+            "image": c["product"].get("image_url"),
+            "category": c["category"]["name"] if c.get("category") else "",
+            "title": c.get("title"),
+            "priority": c.get("priority", "MEDIUM"),
+            "start": c["start"].isoformat(),
+            "end": c["end"].isoformat(),
+            "status": status
+        })
+
+    return jsonify(result)
+
+@product_bp.route("/campaigns/stop/<cid>", methods=["PUT"])
+@login_required(role="admin")
+def stop_campaign(cid):
+
+    mongo.db.campaigns.update_one(
+        {"_id": ObjectId(cid)},
+        {"$set": {"end": datetime.utcnow()}}
+    )
+
+    return jsonify({"message": "Campaign stopped"})
+
+@product_bp.route("/featured", methods=["GET"])
+def get_featured_products():
+    now = datetime.utcnow()
+    pipeline = [
+        {
+            "$match": {
+                "start": {"$lte": now},
+                "end": {"$gte": now}
+            }
+        },
+        {
+            "$lookup": {
+                "from": "products",
+                "localField": "product_id",
+                "foreignField": "_id",
+                "as": "product"
+            }
+        },
+        {"$unwind": "$product"}
+    ]
+
+    campaigns = list(mongo.db.campaigns.aggregate(pipeline))
     products = []
 
-    cursor = mongo.db.products.find({
-        "featured_start": {"$lte": now},
-        "featured_end": {"$gte": now},
-    }).limit(8)
+    for c in campaigns:
+        p = c["product"]
 
-    for p in cursor:
+        category = mongo.db.category.find_one(
+            {"_id": p.get("category_id")}
+        )
+
         p["_id"] = str(p["_id"])
+        p["category"] = category["name"] if category else ""
+
         products.append(p)
 
-    return jsonify(products), 200
+    return jsonify(products)
 
 @product_bp.route("/new-arrivals", methods=["GET"])
 def get_new_arrivals():
@@ -348,11 +439,16 @@ def get_new_arrivals():
     for p in products:
         p["_id"] = str(p["_id"])
 
+        category = mongo.db.category.find_one(
+            {"_id": p.get("category_id")}
+        )
+
+        p["category"] = category["name"] if category else ""
+
     return jsonify(products), 200
 
 @product_bp.route("/top-selling", methods=["GET"])
 def get_top_selling():
-
     pipeline = [
         {"$unwind": "$items"},
         {"$group": {
@@ -377,10 +473,18 @@ def get_top_selling():
     product_map = {p["_id"]: p for p in products}
 
     sorted_products = []
+
     for pid in ordered_ids:
         if pid in product_map:
             product = product_map[pid]
+
+            category = mongo.db.category.find_one(
+                {"_id": product.get("category_id")}
+            )
+
             product["_id"] = str(product["_id"])
+            product["category"] = category["name"] if category else ""
+
             sorted_products.append(product)
 
     return jsonify(sorted_products), 200

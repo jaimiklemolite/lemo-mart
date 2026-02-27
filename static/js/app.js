@@ -451,27 +451,6 @@ async function editProductById(productId) {
   document.getElementById("name").value = p.name || "";
   document.getElementById("price").value = p.price || "";
   document.getElementById("description").value = p.description || "";
-
-  const startInput = document.getElementById("featuredStart");
-  const endInput = document.getElementById("featuredEnd");
-
-  if (startInput && p.featured_start) {
-    try {
-      const startDate = new Date(p.featured_start);
-      startInput.value = startDate.toISOString().slice(0,16);
-    } catch (e) {
-      console.error("Start date parse error:", e);
-    }
-  }
-
-  if (endInput && p.featured_end) {
-    try {
-      const endDate = new Date(p.featured_end);
-      endInput.value = endDate.toISOString().slice(0,16);
-    } catch (e) {
-      console.error("End date parse error:", e);
-    }
-  }
   
   const categorySelect = document.getElementById("categorySelect");
   if (categorySelect && p.category_id) {
@@ -555,17 +534,6 @@ function addProduct() {
   fd.append("description", desc);
   fd.append("category_id", categoryId);
 
-  const start = document.getElementById("featuredStart").value;
-  const end = document.getElementById("featuredEnd").value;
-
-  if (start && end) {
-    fd.append("featured_start", new Date(start).toISOString());
-    fd.append("featured_end", new Date(end).toISOString());
-      } else {
-    fd.append("featured_start", "");
-    fd.append("featured_end", "");
-  }
-
   const specs = collectProductSpecs();
   fd.append("specs", JSON.stringify(specs));
 
@@ -620,17 +588,6 @@ function updateProduct() {
 
   const categoryId = document.getElementById("categorySelect").value;
   if (categoryId) fd.append("category_id", categoryId);
-
-  const start = document.getElementById("featuredStart").value;
-  const end = document.getElementById("featuredEnd").value;
-
-  if (start && end) {
-    fd.append("featured_start", new Date(start).toISOString());
-    fd.append("featured_end", new Date(end).toISOString());
-  } else {
-    fd.append("featured_start", "");
-    fd.append("featured_end", "");
-  }
 
   const specs = collectProductSpecs();
   fd.append("specs", JSON.stringify(specs));
@@ -752,12 +709,6 @@ function clearForm() {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
-  
-  const startInput = document.getElementById("featuredStart");
-  const endInput = document.getElementById("featuredEnd");
-
-  if (startInput) startInput.value = "";
-  if (endInput) endInput.value = "";
 
   const categorySelect = document.getElementById("categorySelect");
   if (categorySelect) {
@@ -1518,11 +1469,329 @@ function openAdminTab(sectionId, btn) {
       loadAnalyticsDashboard();
     }
   }
+  if (sectionId === "campaignTab") {
+    loadCampaigns();
+    loadCampaignCategories();
+  }
 }
 
 function getTabFromURL(defaultTab) {
   const params = new URLSearchParams(window.location.search);
   return params.get("tab") || defaultTab;
+}
+
+/* ======================================================
+   CAMPAIGN MODULE (FINAL VERSION)
+====================================================== */
+let campaignTimer = null;
+let campaignCache = [];
+let currentCampaignTab = "ALL";
+
+function loadCampaignCategories() {
+
+  fetch("/api/categories")
+    .then(res => res.json())
+    .then(categories => {
+
+      const select =
+        document.getElementById("campaignCategory");
+
+      if (!select) return;
+
+      select.innerHTML =
+        `<option value="">Select Category</option>`;
+
+      categories.forEach(c => {
+        select.innerHTML += `
+          <option value="${c.id}">
+            ${titleCase(c.name)}
+          </option>`;
+      });
+    });
+}
+
+function loadCampaignProductsByCategory() {
+
+  const categoryId =
+    document.getElementById("campaignCategory").value;
+
+  const productSelect =
+    document.getElementById("campaignProduct");
+
+  if (!categoryId) {
+    productSelect.innerHTML =
+      `<option value="">Select Product</option>`;
+    return;
+  }
+
+  fetch("/api/products/")
+    .then(res => res.json())
+    .then(products => {
+
+      const filtered =
+        products.filter(p => p.category_id === categoryId);
+
+      productSelect.innerHTML =
+        `<option value="">Select Product</option>`;
+
+      filtered.forEach(p => {
+        productSelect.innerHTML += `
+          <option value="${p._id}">
+            ${p.name}
+          </option>`;
+      });
+    });
+}
+
+function createCampaign() {
+
+  const category =
+    document.getElementById("campaignCategory").value;
+
+  const product =
+    document.getElementById("campaignProduct").value;
+
+  const title =
+    document.getElementById("campaignTitle").value;
+
+  const start =
+    document.getElementById("campaignStart").value;
+
+  const end =
+    document.getElementById("campaignEnd").value;
+
+  if (!category || !product || !start || !end) {
+    showToast("Fill All Campaign Fields", "info");
+    return;
+  }
+
+  fetch("/api/products/campaigns/create", {
+    method: "POST",
+    credentials: "include",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      product_id: product,
+      title,
+      priority: "MEDIUM",
+      start: new Date(start).toISOString(),
+      end: new Date(end).toISOString()
+    })
+  })
+  .then(() => {
+    showToast("Campaign Created", "success");
+    resetCampaignForm();
+    loadCampaigns();
+  });
+}
+
+function resetCampaignForm() {
+  [
+    "campaignCategory",
+    "campaignProduct",
+    "campaignTitle",
+    "campaignStart",
+    "campaignEnd"
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+}
+
+function loadCampaigns() {
+
+  fetch("/api/products/campaigns", { credentials: "include" })
+    .then(res => res.json())
+    .then(data => {
+
+      campaignCache = data;
+
+      updateCampaignTabCounts(data);
+      renderCampaignCards("ALL");
+      startCampaignCountdown();
+    });
+}
+
+function updateCampaignTabCounts(data) {
+
+  const counts = {
+    ALL: data.length,
+    LIVE: 0,
+    SCHEDULED: 0,
+    EXPIRED: 0
+  };
+
+  data.forEach(c => counts[c.status]++);
+
+  document.getElementById("tabAllCount").innerText = counts.ALL;
+  document.getElementById("tabLiveCount").innerText = counts.LIVE;
+  document.getElementById("tabScheduledCount").innerText = counts.SCHEDULED;
+  document.getElementById("tabExpiredCount").innerText = counts.EXPIRED;
+
+  document.getElementById("liveCampaignCount").innerText = counts.LIVE;
+  document.getElementById("scheduledCampaignCount").innerText = counts.SCHEDULED;
+  document.getElementById("expiredCampaignCount").innerText = counts.EXPIRED;
+}
+
+function switchCampaignTab(tab, btn) {
+
+  currentCampaignTab = tab;
+
+  document.querySelectorAll(".campaign-tab")
+    .forEach(t => t.classList.remove("active"));
+
+  btn.classList.add("active");
+
+  renderCampaignCards();
+}
+
+function renderCampaignCards(filter = "ALL") {
+
+  const container = document.getElementById("campaignList");
+  if (!container) return;
+
+  let live = 0, scheduled = 0, expired = 0;
+
+  const filtered = campaignCache.filter(c => {
+
+    if (c.status === "LIVE") live++;
+    else if (c.status === "SCHEDULED") scheduled++;
+    else expired++;
+
+    if (filter === "ALL") return true;
+    return c.status === filter;
+  });
+
+  const html = filtered.map(c => `
+    <div class="campaign-item">
+
+      <img src="${c.image}" />
+
+      <div class="campaign-info">
+
+        <h4>${c.name}</h4>
+        <div>${c.title || ""}</div>
+        <small>${titleCase(c.category)}</small>
+
+        <small class="countdown"
+          data-end="${c.end}">
+          Calculating...
+        </small>
+
+        <div class="campaign-priority">
+          Priority: ${c.priority}
+        </div>
+
+        <div class="campaign-actions">
+
+          <button onclick="editCampaign('${c.id}')">
+            Edit
+          </button>
+
+          ${
+            c.status !== "EXPIRED"
+              ? `<button onclick="stopCampaign('${c.id}')">Stop</button>`
+              : ""
+          }
+
+          <span class="campaign-status ${c.status.toLowerCase()}">
+            ${c.status}
+          </span>
+
+        </div>
+
+      </div>
+    </div>
+  `).join("");
+
+  container.innerHTML = html;
+
+  document.getElementById("liveCampaignCount").innerText = live;
+  document.getElementById("scheduledCampaignCount").innerText = scheduled;
+  document.getElementById("expiredCampaignCount").innerText = expired;
+}
+
+function getCampaignStatus(c) {
+
+  const now = new Date();
+  const start = new Date(c.start);
+  const end = new Date(c.end);
+
+  if (now >= start && now <= end) return "LIVE";
+  if (now < start) return "SCHEDULED";
+  return "EXPIRED";
+}
+
+function startCampaignCountdown() {
+
+  if (campaignTimer) clearInterval(campaignTimer);
+
+  campaignTimer = setInterval(() => {
+
+    let needReload = false;
+
+    document.querySelectorAll(".countdown")
+      .forEach((el, index) => {
+
+        const campaign = campaignCache[index];
+        if (!campaign) return;
+
+        const end = new Date(campaign.end);
+        const now = new Date();
+
+        let diff = end - now;
+
+        if (diff <= 0) {
+          el.innerText = "Ended";
+        } else {
+
+          const h = Math.floor(diff / 3600000);
+          const m = Math.floor((diff % 3600000) / 60000);
+          const s = Math.floor((diff % 60000) / 1000);
+
+          el.innerText =
+            `Ends in: ${h}h ${m}m ${s}s`;
+        }
+
+        const newStatus = getCampaignStatus(campaign);
+
+        if (newStatus !== campaign.status) {
+          campaign.status = newStatus;
+          needReload = true;
+        }
+
+      });
+
+    if (needReload) {
+      renderCampaignCards();
+    }
+  }, 1000);
+}
+
+function stopCampaign(id) {
+
+  showConfirm(
+    "Stop Campaign",
+    "Stop this campaign now?",
+    () => {
+
+      fetch(`/api/products/campaigns/stop/${id}`, {
+        method: "PUT",
+        credentials: "include"
+      })
+      .then(() => {
+        showToast("Campaign Stopped", "success");
+        loadCampaigns();
+      });
+    }
+  );
+}
+
+
+/* ------------------------------
+   EDIT (PLACEHOLDER)
+------------------------------ */
+function editCampaign(id) {
+  showToast("Edit Campaign Coming Soon", "info");
 }
 
 function loadFeaturedProducts() {
@@ -1538,6 +1807,7 @@ function loadFeaturedProducts() {
           <img src="${p.image_url}">
           <div class="editorial-info">
             <h4>${p.name}</h4>
+            <div class="category">${titleCase(p.category)}</div>
             <div class="price">
               ₹${p.price.toLocaleString("en-IN")}
             </div>
@@ -1576,6 +1846,7 @@ function loadTopProducts() {
 
           <div class="mini-info">
             <div>${p.name}</div>
+            <div class="category">${titleCase(p.category)}</div>
             <div class="price">₹${p.price.toLocaleString("en-IN")}</div>
           </div>
         </div>
@@ -1596,6 +1867,7 @@ function loadNewArrivals() {
           <img src="${p.image_url || p.images?.[0]}" />
           <div class="editorial-info">
             <h4>${p.name}</h4>
+            <div class="category">${titleCase(p.category)}</div>
             <div class="category">${p.description}</div>
             <div class="price">
               ₹${p.price.toLocaleString("en-IN")}
