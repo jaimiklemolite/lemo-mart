@@ -2,6 +2,7 @@ from flask import Blueprint, session, request, jsonify
 from bson.objectid import ObjectId
 from extension import mongo
 from utils import login_required
+from routes.utils import apply_campaign_discount
 
 cart_bp = Blueprint("cart", __name__, url_prefix="/api/cart")
 
@@ -77,10 +78,15 @@ def get_cart():
 
         product = mongo.db.products.find_one({"_id": ObjectId(product_id)})
         if product:
+            product = apply_campaign_discount(product)
+
             items.append({
                 "product_id": product_id,
                 "name": product["name"],
-                "price": product["price"],
+                "price": product.get("price"),
+                "offer_price": product.get("offer_price"),
+                "original_price": product.get("original_price"),
+                "discount_percent": product.get("discount_percent"),
                 "qty": qty,
                 "stock": product.get("quantity", 0),
                 "image_url": product.get("image_url")

@@ -172,33 +172,9 @@
   </div>
 
   <div id="campaignTab" class="admin-section hidden">
-    <div class="campaign-create">
-      <h2>Create Campaign</h2>
-      <select id="campaignCategory"
-              onchange="loadCampaignProductsByCategory()">
-        <option value="">Select Category</option>
-      </select>
-
-      <select id="campaignProduct">
-        <option value="">Select Product</option>
-      </select>
-
-      <input type="text"
-            id="campaignTitle"
-            placeholder="Campaign Title">
-
-      <input type="datetime-local" id="campaignStart">
-      <input type="datetime-local" id="campaignEnd">
-
-      <button class="product-btn"
-              onclick="createCampaign()">
-        Create Campaign
-      </button>
-
-    </div>
-
-    <h3>Active Campaigns</h3>
+    <h2>Campaigns</h2>
     <div class="campaign-stats">
+
       <div class="campaign-card">
         <span>Live Campaigns</span>
         <b id="liveCampaignCount">0</b>
@@ -215,6 +191,39 @@
       </div>
     </div>
 
+    <div class="campaign-create">
+      <h2>Create Campaign</h2>
+      <select id="campaignCategory"
+              onchange="loadCampaignProductsByCategory()">
+        <option value="">Select Category</option>
+      </select>
+
+      <select id="campaignProduct">
+        <option value="">Select Product</option>
+      </select>
+
+      <input type="text"
+            id="campaignTitle"
+            placeholder="Campaign Title">
+
+      <input type="number"
+            id="campaignDiscount"
+            class="campaign-discount"
+            placeholder="Discount % (e.g. 15)"
+            min="0"
+            max="90">
+
+      <input type="datetime-local" id="campaignStart">
+      <input type="datetime-local" id="campaignEnd">
+
+      <button class="product-btn"
+              onclick="createCampaign()">
+        Create Campaign
+      </button>
+
+    </div>
+
+    <h3>Active Campaigns</h3>
     <!-- Campaign Tabs -->
     <div class="campaign-tabs">
 
@@ -239,7 +248,9 @@
       </button>
 
     </div>
-
+    <div id="campaignTabMessage" class="campaign-tab-message">
+      Total Campaigns: 0
+    </div>
     <div id="campaignList" class="campaign-list"></div>
 
   </div>

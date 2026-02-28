@@ -1,5 +1,6 @@
 from datetime import datetime
 from flask import request
+from extension import mongo
 import re
 
 def title_case(text):
@@ -37,3 +38,37 @@ def parse_date_range():
             }
         }
     }
+
+def apply_campaign_discount(product):
+
+    now = datetime.utcnow()
+
+    campaign = mongo.db.campaigns.find_one({
+        "product_id": product["_id"],
+        "start": {"$lte": now},
+        "end": {"$gte": now}
+    })
+
+    original_price = float(product["price"])
+
+    product["original_price"] = original_price
+    product["offer_price"] = None
+    product["discount_percent"] = 0
+    product["is_discount_active"] = False
+    product["final_price"] = original_price
+
+    if campaign:
+        discount = float(campaign.get("discount_percent", 0))
+
+        if discount > 0:
+            offer_price = round(
+                original_price * (1 - discount / 100),
+                2
+            )
+
+            product["offer_price"] = offer_price
+            product["final_price"] = offer_price
+            product["discount_percent"] = discount
+            product["is_discount_active"] = True
+
+    return product

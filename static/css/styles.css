@@ -297,11 +297,43 @@ body > *:not(.app-footer) {
   transform: translateY(-6px);
 }
 
+/* IMAGE WRAPPER */
+.featured-img-wrapper{
+  position:relative;
+}
+
 .editorial-card img {
   width: 100%;
   height: 300px;
   object-fit: cover;
   border-radius: 6px;
+}
+
+/* LIMITED BADGE */
+.limited-badge{
+  position:absolute;
+  top:8px;
+  left:8px;
+  background:#ef4444;
+  color:#fff;
+  font-size:11px;
+  font-weight:600;
+  padding:4px 8px;
+  border-radius:6px;
+  z-index:2;
+}
+
+/* COUNTDOWN */
+.featured-countdown{
+  position:absolute;
+  bottom:8px;
+  left:8px;
+  background:rgba(0,0,0,0.75);
+  color:#fff;
+  font-size:11px;
+  padding:4px 8px;
+  border-radius:6px;
+  font-weight:600;
 }
 
 .editorial-info {
@@ -314,10 +346,27 @@ body > *:not(.app-footer) {
   margin-bottom: 4px;
 }
 
-.editorial-info .price {
-  color: #2e7d32;
-  font-weight: 600;
-  font-size: 14px;
+.offer-price{
+  font-size:16px;
+  font-weight:700;
+  color:#dc2626;
+}
+
+.original-price{
+  margin-left:6px;
+  text-decoration:line-through;
+  color:#888;
+  font-size:13px;
+}
+
+.discount-badge{
+  margin-left:6px;
+  background:#dc2626;
+  color:#fff;
+  font-size:11px;
+  padding:2px 6px;
+  border-radius:4px;
+  font-weight:600;
 }
 
 .mini-info .category,
@@ -926,6 +975,11 @@ select:focus {
 /* =====================================================
    CAMPAIGN DASHBOARD
 ===================================================== */
+.campaign-discount {
+  width: 160px;
+  flex: 0 0 160px;
+}
+
 .campaign-stats {
   display: flex;
   gap: 16px;
@@ -956,6 +1010,13 @@ select:focus {
   gap:10px;
   margin:18px 0 20px;
   flex-wrap:wrap;
+}
+
+.campaign-tab-message {
+  margin: 8px 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #444;
 }
 
 .campaign-tab {

@@ -25,7 +25,8 @@ function loadCart() {
       let totalAmount = 0;
 
       itemsDiv.innerHTML = data.items.map(item => {
-        const itemTotal = item.price * item.qty;
+        const price = item.offer_price || item.price;
+        const itemTotal = price * item.qty;
         totalAmount += itemTotal;
 
         const stock = item.stock ?? 9999;
@@ -41,7 +42,23 @@ function loadCart() {
 
             <div class="cart-info">
               <h4>${item.name}</h4>
-              <div class="price">₹ ${item.price?.toLocaleString("en-IN") || 0}</div>
+              <div class="price">
+                ${
+                  item.offer_price
+                    ? `
+                      <span class="offer-price">
+                        ₹${item.offer_price.toLocaleString("en-IN")}
+                      </span>
+                      <span class="original-price">
+                        ₹${item.original_price.toLocaleString("en-IN")}
+                      </span>
+                      <span class="discount-badge">
+                        ${item.discount_percent}% OFF
+                      </span>
+                    `
+                    : `₹ ${item.price?.toLocaleString("en-IN") || 0}`
+                }
+              </div>
 
               <div class="cart-actions">
                 <button
@@ -81,7 +98,7 @@ function loadCart() {
         ${data.items.map(item => `
           <div class="cart-summary-item">
             <span>${item.name}</span>
-            <span>₹ ${item.price?.toLocaleString("en-IN") || 0} × ${item.qty}</span>
+            <span>₹ ${(item.offer_price || item.price).toLocaleString("en-IN")} × ${item.qty}</span>
           </div>
         `).join("")}
 

@@ -3,6 +3,7 @@ from bson.objectid import ObjectId
 from extension import mongo
 from utils import login_required
 from datetime import datetime
+from routes.utils import apply_campaign_discount
 
 wishlist_bp = Blueprint("wishlist", __name__, url_prefix="/api/users/wishlist")
 
@@ -30,10 +31,15 @@ def get_wishlist():
     for w in data:
         p = w["product"]
 
+        p = apply_campaign_discount(p)
+
         products.append({
             "id": str(p["_id"]),
             "name": p.get("name"),
             "price": p.get("price"),
+            "offer_price": p.get("offer_price"),
+            "original_price": p.get("original_price"),
+            "discount_percent": p.get("discount_percent"),
             "quantity": p.get("quantity", 0),
             "description": p.get("description", ""),
             "category": p.get("category", ""),

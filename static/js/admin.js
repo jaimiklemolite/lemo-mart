@@ -123,7 +123,9 @@ function renderOrders(orders) {
                 ${titleCase(item.category || "Unknown")}
               </p>
               <p>Qty: ${item.qty}</p>
-              <p class="price">₹${item.price?.toLocaleString("en-IN") || 0}</p>
+              <p class="price">
+                ₹${(item.price_at_purchase ?? item.price ?? 0).toLocaleString("en-IN")}
+              </p>
             </div>
           </div>
         `).join("")}

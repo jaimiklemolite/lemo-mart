@@ -1,6 +1,7 @@
 from flask import Blueprint, session, jsonify, request, current_app
 from extension import mongo
 from utils import login_required
+from routes.utils import apply_campaign_discount
 from bson.objectid import ObjectId
 from datetime import datetime
 import os, shutil
@@ -31,6 +32,7 @@ def place_order():
         product_id = str(item["product_id"])
         qty = item["qty"]
         product = mongo.db.products.find_one({"_id": ObjectId(product_id)})
+        product = apply_campaign_discount(product)
 
         if not product:
             return jsonify({"message": "Product not found"}), 404
@@ -62,14 +64,30 @@ def place_order():
             {"$inc": {"quantity": -qty}}
         )
 
+        locked_price = float(
+            product.get("final_price")
+            or product.get("offer_price")
+            or product.get("price")
+        )
+
+        subtotal = locked_price * qty
+
         items.append({
             "product_id": ObjectId(product_id),
             "name": product["name"],
-            "price": product["price"],
-            "qty": qty,
+            "category": category["name"] if category else "Unknown",
             "image_url": snapshot_url,
-            "category": category["name"] if category else "Unknown"
+            "original_price": product.get("original_price", locked_price),
+            "price_at_purchase": locked_price,
+            "discount_percent": product.get("discount_percent", 0),
+            "is_discount_active": product.get("is_discount_active", False),
+
+            "qty": qty,
+            "subtotal": subtotal
         })
+
+    order_total = sum(item["subtotal"] for item in items)
+    total_items = sum(item["qty"] for item in items)
 
     now = datetime.utcnow()
     year = now.year
@@ -88,6 +106,10 @@ def place_order():
         "order_number": order_number,
         "user_id": user_id,
         "items": items,
+        "order_total": order_total,
+        "total_items": total_items,
+        "pricing_locked": True,
+
         "status": "Pending",
         "created_at": now,
         "status_updated_at": now,
@@ -108,8 +130,8 @@ def get_all_orders():
         user = mongo.db.users.find_one(
             {"_id": ObjectId(o["user_id"])}
         )
-        order_total = sum(item["price"] * item["qty"] for item in o["items"])
-        total_items = sum(item["qty"] for item in o["items"])
+        order_total = o.get("order_total", 0)
+        total_items = o.get("total_items", 0)
 
         orders.append({
             "id": str(o["_id"]),

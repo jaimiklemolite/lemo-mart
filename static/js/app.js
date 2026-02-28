@@ -2,7 +2,7 @@ const IS_ADMIN = window.USER_ROLE === "admin";
 const IS_ADMIN_PRODUCTS_PAGE = location.pathname.startsWith("/admin");
 const IS_DASHBOARD_PAGE = location.pathname === "/dashboard";
 
-// UTILITIES (Titlecase, Toast MSG)
+// UTILITIES (Titlecase, Price Rendering, Toast MSG)
 function titleCase(str) {
   if (!str) return "";
   return str
@@ -10,6 +10,30 @@ function titleCase(str) {
     .split(" ")
     .map(w => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
+}
+
+function renderPriceHTML(p) {
+  if (p.offer_price || p.is_discount_active) {
+
+    const offer = p.offer_price || p.final_price;
+    const original = p.original_price || p.price;
+    const discount = p.discount_percent || "";
+
+    return `
+      <span class="offer-price">
+        ₹${offer.toLocaleString("en-IN")}
+      </span>
+      <span class="original-price">
+        ₹${original.toLocaleString("en-IN")}
+      </span>
+      ${
+        discount
+          ? `<span class="discount-badge">${discount}% OFF</span>`
+          : ""
+      }
+    `;
+  }
+  return `₹${p.price.toLocaleString("en-IN")}`;
 }
 
 function showToast(message, type = "info", duration = 3000, persist = false) {
@@ -374,7 +398,9 @@ function renderProducts(list, showAdmin = false, isAdminView = false) {
               : `<div class="stock-label in-stock">In Stock (${p.quantity})</div>`
           }
 
-          <div class="price">₹${p.price?.toLocaleString("en-IN") || 0}</div>
+          <div class="price">
+            ${renderPriceHTML(p)}
+          </div>
 
           <div class="product-actions">
             <button onclick="viewProduct('${p._id}')">View</button>
@@ -1547,20 +1573,18 @@ function createCampaign() {
 
   const category =
     document.getElementById("campaignCategory").value;
-
   const product =
     document.getElementById("campaignProduct").value;
-
   const title =
     document.getElementById("campaignTitle").value;
-
+  const discount =
+    document.getElementById("campaignDiscount").value || 0;
   const start =
     document.getElementById("campaignStart").value;
-
   const end =
     document.getElementById("campaignEnd").value;
 
-  if (!category || !product || !start || !end) {
+  if (!category || !product || !discount || !start || !end) {
     showToast("Fill All Campaign Fields", "info");
     return;
   }
@@ -1573,6 +1597,7 @@ function createCampaign() {
       product_id: product,
       title,
       priority: "MEDIUM",
+      discount_percent: Number(discount),
       start: new Date(start).toISOString(),
       end: new Date(end).toISOString()
     })
@@ -1589,6 +1614,7 @@ function resetCampaignForm() {
     "campaignCategory",
     "campaignProduct",
     "campaignTitle",
+    "campaignDiscount",
     "campaignStart",
     "campaignEnd"
   ].forEach(id => {
@@ -1641,12 +1667,13 @@ function switchCampaignTab(tab, btn) {
 
   btn.classList.add("active");
 
-  renderCampaignCards();
+  renderCampaignCards(tab);
 }
 
-function renderCampaignCards(filter = "ALL") {
+function renderCampaignCards(filter = currentCampaignTab) {
 
   const container = document.getElementById("campaignList");
+  const messageEl = document.getElementById("campaignTabMessage");
   if (!container) return;
 
   let live = 0, scheduled = 0, expired = 0;
@@ -1669,11 +1696,12 @@ function renderCampaignCards(filter = "ALL") {
       <div class="campaign-info">
 
         <h4>${c.name}</h4>
-        <div>${c.title || ""}</div>
         <small>${titleCase(c.category)}</small>
+        <div><strong>Campaign Title: </strong>${titleCase(c.title || "")}</div>
 
         <small class="countdown"
-          data-end="${c.end}">
+          data-end="${c.end}"
+          data-id="${c.id}">
           Calculating...
         </small>
 
@@ -1704,6 +1732,16 @@ function renderCampaignCards(filter = "ALL") {
   `).join("");
 
   container.innerHTML = html;
+  if (messageEl) {
+
+    let label = "Total Campaigns";
+
+    if (filter === "LIVE") label = "Live Campaigns";
+    if (filter === "SCHEDULED") label = "Scheduled Campaigns";
+    if (filter === "EXPIRED") label = "Expired Campaigns";
+
+    messageEl.innerText = `${label}: ${filtered.length}`;
+  }
 
   document.getElementById("liveCampaignCount").innerText = live;
   document.getElementById("scheduledCampaignCount").innerText = scheduled;
@@ -1712,9 +1750,9 @@ function renderCampaignCards(filter = "ALL") {
 
 function getCampaignStatus(c) {
 
-  const now = new Date();
-  const start = new Date(c.start);
-  const end = new Date(c.end);
+  const now = new Date(Date.now());
+  const start = new Date(c.start + "Z");
+  const end = new Date(c.end + "Z");
 
   if (now >= start && now <= end) return "LIVE";
   if (now < start) return "SCHEDULED";
@@ -1731,26 +1769,58 @@ function startCampaignCountdown() {
 
     document.querySelectorAll(".countdown")
       .forEach((el, index) => {
+        const id = el.dataset.id;
 
-        const campaign = campaignCache[index];
+        const campaign =
+          campaignCache.find(c => c.id === id);
+
         if (!campaign) return;
 
-        const end = new Date(campaign.end);
         const now = new Date();
+        const start = new Date(campaign.start + "Z");
+        const end = new Date(campaign.end + "Z");
 
-        let diff = end - now;
+        let diff;
+        let label = "";
 
-        if (diff <= 0) {
-          el.innerText = "Ended";
-        } else {
-
-          const h = Math.floor(diff / 3600000);
-          const m = Math.floor((diff % 3600000) / 60000);
-          const s = Math.floor((diff % 60000) / 1000);
-
-          el.innerText =
-            `Ends in: ${h}h ${m}m ${s}s`;
+        /* ---------------------------
+          SCHEDULED → Starts In
+        ----------------------------*/
+        if (now < start) {
+          diff = start.getTime() - now.getTime();
+          label = "Starts in";
         }
+
+        /* ---------------------------
+          LIVE → Ends In
+        ----------------------------*/
+        else if (now >= start && now <= end) {
+          diff = end.getTime() - now.getTime();
+          label = "Ends in";
+        }
+
+        /* ---------------------------
+          EXPIRED
+        ----------------------------*/
+        else {
+          el.innerText = "Ended";
+
+          const newStatus = getCampaignStatus(campaign);
+
+          if (newStatus !== campaign.status) {
+            campaign.status = newStatus;
+            needReload = true;
+          }
+
+          return;
+        } 
+
+        const totalSeconds = Math.floor(diff / 1000);
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+
+        el.innerText = `${label}: ${h}h ${m}m ${s}s`;
 
         const newStatus = getCampaignStatus(campaign);
 
@@ -1762,7 +1832,11 @@ function startCampaignCountdown() {
       });
 
     if (needReload) {
-      renderCampaignCards();
+      updateCampaignTabCounts(campaignCache);
+      renderCampaignCards(currentCampaignTab);
+      setTimeout(() => {
+        startCampaignCountdown();
+      }, 50);
     }
   }, 1000);
 }
@@ -1794,6 +1868,8 @@ function editCampaign(id) {
   showToast("Edit Campaign Coming Soon", "info");
 }
 
+let featuredHTMLCache = "";
+
 function loadFeaturedProducts() {
   fetch("/api/products/featured")
     .then(res => res.json())
@@ -1801,28 +1877,92 @@ function loadFeaturedProducts() {
       const container = document.getElementById("featuredProducts");
       if (!container) return;
 
-      container.innerHTML = data.map(p => `
+      const newHTML = data.map(p => `
         <div class="editorial-card"
-             onclick="viewProduct('${p._id}')">
-          <img src="${p.image_url}">
+            onclick="viewProduct('${p._id}')">
+
+          <div class="featured-img-wrapper">
+            <img src="${p.image_url}">
+
+            <div class="limited-badge">
+              Limited Time Offer
+            </div>
+
+            <div class="featured-countdown"
+                data-end="${p.campaign_end}">
+              Calculating...
+            </div>
+
+          </div>
+
           <div class="editorial-info">
             <h4>${p.name}</h4>
             <div class="category">${titleCase(p.category)}</div>
             <div class="price">
-              ₹${p.price.toLocaleString("en-IN")}
+              ${
+                p.offer_price
+                  ? `
+                    <span class="offer-price">
+                      ₹${p.offer_price.toLocaleString("en-IN")}
+                    </span>
+                    <span class="original-price">
+                      ₹${p.original_price.toLocaleString("en-IN")}
+                    </span>
+                    <span class="discount-badge">
+                      ${p.discount_percent}% OFF
+                    </span>
+                  `
+                  : `₹${p.price.toLocaleString("en-IN")}`
+              }
             </div>
           </div>
         </div>
       `).join("");
-      if (container.innerHTML !== newHTML) {
-        container.style.opacity = "0.5";
 
-        setTimeout(() => {
-          container.innerHTML = newHTML;
-          container.style.opacity = "1";
-        }, 200);
+      if (newHTML === featuredHTMLCache) {
+        return;
       }
+      featuredHTMLCache = newHTML;
+      container.style.opacity = "0.5";
+
+      setTimeout(() => {
+        container.innerHTML = newHTML;
+        container.style.opacity = "1";
+        startFeaturedCountdown();
+      }, 200);
     });
+}
+
+function startFeaturedCountdown() {
+
+  setInterval(() => {
+
+    document.querySelectorAll(".featured-countdown")
+      .forEach(el => {
+
+        const end = new Date(el.dataset.end + "Z");
+        const now = new Date();
+
+        let diff = end - now;
+
+        if (diff <= 0) {
+          el.innerText = "Offer Ended";
+          el.style.background = "#444";
+          return;
+        }
+
+        const total = Math.floor(diff / 1000);
+
+        const h = Math.floor(total / 3600);
+        const m = Math.floor((total % 3600) / 60);
+        const s = total % 60;
+
+        const pad = n => String(n).padStart(2, "0");
+
+        el.innerText = `Ends in ${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+      });
+
+  }, 1000);
 }
 
 function loadTopProducts() {
@@ -1916,6 +2056,8 @@ function scrollNewArrivals(direction) {
   });
 }
 
+window.renderPriceHTML = renderPriceHTML;
+
 document.addEventListener("DOMContentLoaded", () => {
   loadProfileDropdown();
   handleHeaderIconsVisibility();
@@ -1929,12 +2071,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (location.pathname === "/dashboard") {
     loadFeaturedProducts();
+    startFeaturedCountdown();
     loadTopProducts();
     loadNewArrivals();
     
     setInterval(() => {
       loadFeaturedProducts();
-    }, 20000);
+    }, 10000);
+    setInterval(async () => {
+      const res = await fetch("/api/products/");
+      const data = await res.json();
+
+      const newData = JSON.stringify(data);
+      const oldData = JSON.stringify(productCache);
+
+      if (newData !== oldData) {
+        productCache = data;
+        renderProducts(
+          productCache,
+          IS_ADMIN_PRODUCTS_PAGE,
+          IS_DASHBOARD_PAGE && IS_ADMIN
+        );
+      }
+    }, 10000);
   }
 
   if (location.pathname !== "/wishlist") {

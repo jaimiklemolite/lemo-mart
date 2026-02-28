@@ -4,6 +4,7 @@ from bson.errors import InvalidId
 from extension import mongo
 from utils import login_required
 from routes.utils import title_case, slugify
+from routes.utils import apply_campaign_discount
 from datetime import datetime
 import os
 import uuid
@@ -86,12 +87,13 @@ def get_products():
     products = []
 
     for product in mongo.db.products.find():
+        product = apply_campaign_discount(product)
         product["_id"] = str(product["_id"])
         product["category_id"] = str(product.get("category_id"))
 
         category = mongo.db.category.find_one({"_id": ObjectId(product["category_id"])})
         product["category"] = category["name"] if category else ""
-
+        
         products.append(product)
 
     return jsonify(products), 200
@@ -103,7 +105,8 @@ def get_single_product(product_id):
 
     if not product:
         return jsonify({"message": "Product not found"}), 404
-
+    
+    product = apply_campaign_discount(product)
     product["_id"] = str(product["_id"])
 
     if "category_id" in product:
@@ -129,10 +132,15 @@ def get_related_products(product_id):
 
     related = []
     for p in cursor:
+        p = apply_campaign_discount(p)
+
         related.append({
             "id": str(p["_id"]),
             "name": p.get("name"),
             "price": p.get("price"),
+            "offer_price": p.get("offer_price"),
+            "original_price": p.get("original_price"),
+            "discount_percent": p.get("discount_percent"),
             "image_url": (
                 p["images"][0]
                 if isinstance(p.get("images"), list) and p["images"]
@@ -308,6 +316,7 @@ def create_campaign():
     end = data.get("end")
     title = data.get("title")
     priority = data.get("priority", "MEDIUM")
+    discount_percent = float(data.get("discount_percent", 0))
 
     if not product_id or not start or not end:
         return jsonify({"message": "Missing fields"}), 400
@@ -316,6 +325,7 @@ def create_campaign():
         "product_id": ObjectId(product_id),
         "title": title or "Featured Campaign",
         "priority": priority,
+        "discount_percent": discount_percent,
         "start": datetime.fromisoformat(start),
         "end": datetime.fromisoformat(end),
         "created_at": datetime.utcnow()
@@ -417,12 +427,25 @@ def get_featured_products():
     for c in campaigns:
         p = c["product"]
 
+        discount = c.get("discount_percent", 0)
+
+        if discount > 0:
+            original_price = float(p["price"])
+            offer_price = round(original_price * (1 - discount / 100), 2)
+
+            p["original_price"] = original_price
+            p["offer_price"] = offer_price
+            p["discount_percent"] = discount
+        else:
+            p["original_price"] = p["price"]
+
         category = mongo.db.category.find_one(
             {"_id": p.get("category_id")}
         )
 
         p["_id"] = str(p["_id"])
         p["category"] = category["name"] if category else ""
+        p["campaign_end"] = c["end"].isoformat()
 
         products.append(p)
 

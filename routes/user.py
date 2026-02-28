@@ -82,8 +82,11 @@ def profile():
     orders = []
     for o in mongo.db.orders.find({"user_id": ObjectId(user_id)}):
 
-        order_total = sum(item["price"] * item["qty"] for item in o["items"])
-        total_items = sum(item["qty"] for item in o["items"])
+        order_total = sum(
+            (item.get("price_at_purchase") or item.get("price", 0)) * item["qty"]
+            for item in o["items"]
+        )
+        total_items = o.get("total_items") or sum(item["qty"] for item in o["items"])
 
         orders.append({
             "id": str(o["_id"]),
