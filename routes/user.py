@@ -3,6 +3,7 @@ from extension import mongo
 from utils import login_user, logout_user, login_required
 import bcrypt
 from bson.objectid import ObjectId
+from datetime import datetime
 
 user_bp = Blueprint("users", __name__, url_prefix="/api/users")
 
@@ -55,7 +56,14 @@ def signup():
         "username": username,
         "email": email,
         "password": hashed_password,
-        "role": "user"
+        "role": "user",
+        "membership": {
+            "plan": "free",
+            "discount": 0,
+            "free_shipping": False,
+            "early_campaign_hours": 0,
+            "expires_at": None
+        }
     })
 
     return jsonify({"message": "User registered successfully"}), 201
@@ -74,6 +82,33 @@ def profile():
     user = mongo.db.users.find_one(
         {"_id": ObjectId(user_id)}
     )
+    membership = user.get("membership")
+
+    if membership and membership.get("expires_at"):
+
+        if membership["expires_at"] < datetime.utcnow():
+
+            # downgrade to free plan instead of removing membership
+            mongo.db.users.update_one(
+                {"_id": ObjectId(user_id)},
+                {
+                    "$set": {
+                        "membership.plan": "free",
+                        "membership.discount": 0,
+                        "membership.free_shipping": False,
+                        "membership.early_campaign_hours": 0,
+                        "membership.expires_at": None
+                    }
+                }
+            )
+
+            user["membership"] = {
+                "plan": "free",
+                "discount": 0,
+                "free_shipping": False,
+                "early_campaign_hours": 0,
+                "expires_at": None
+            }
 
     if not user:
         session.clear()
@@ -100,8 +135,14 @@ def profile():
 
     user["_id"] = str(user["_id"])
 
+    membership = user.get("membership", {})
+
+    if membership and membership.get("expires_at"):
+        membership["expires_at"] = membership["expires_at"].isoformat()
+
     return jsonify({
         "user": user,
+        "membership": membership,
         "orders": orders
     }), 200
 

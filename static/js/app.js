@@ -13,25 +13,71 @@ function titleCase(str) {
     .join(" ");
 }
 
-function renderPriceHTML(p) {
-  if (p.offer_price || p.is_discount_active) {
+// function renderPriceHTML(p) {
+//   if (p.offer_price || p.is_discount_active) {
 
-    const offer = p.offer_price || p.final_price;
-    const original = p.original_price || p.price;
-    const discount = p.discount_percent || "";
+//     const offer = p.offer_price || p.final_price;
+//     const original = p.original_price || p.price;
+//     const discount = p.discount_percent || "";
+
+//     return `
+//       <span class="offer-price">
+//         ₹${offer.toLocaleString("en-IN")}
+//       </span>
+//       <span class="original-price">
+//         ₹${original.toLocaleString("en-IN")}
+//       </span>
+//       ${
+//         discount
+//           ? `<span class="discount-badge">${discount}% OFF</span>`
+//           : ""
+//       }
+//     `;
+//   }
+//   return `₹${p.price.toLocaleString("en-IN")}`;
+// }
+
+function renderPriceHTML(p) {
+  const finalPrice = p.final_price || p.offer_price || p.price;
+  const original = p.original_price || p.price;
+  const discount = p.discount_percent || "";
+  const memberDiscount = p.member_discount || 0;
+  const memberPlan = p.membership_plan || "";
+
+  if (p.offer_price || p.is_discount_active || memberDiscount) {
 
     return `
-      <span class="offer-price">
-        ₹${offer.toLocaleString("en-IN")}
-      </span>
-      <span class="original-price">
-        ₹${original.toLocaleString("en-IN")}
-      </span>
-      ${
-        discount
-          ? `<span class="discount-badge">${discount}% OFF</span>`
-          : ""
-      }
+      <div class="price-wrapper">
+
+        <div class="price-row">
+          <span class="offer-price">
+            ₹${finalPrice.toLocaleString("en-IN")}
+          </span>
+          ${
+            original > finalPrice
+              ? `<span class="original-price">
+                  ₹${original.toLocaleString("en-IN")}
+                </span>`
+              : ""
+          }
+        </div>
+
+        <div class="price-badges">
+          ${
+            discount
+              ? `<span class="discount-badge">${discount}% OFF</span>`
+              : ""
+          }
+          ${
+            memberDiscount
+              ? `<span class="member-badge ${memberPlan}">
+                  ${memberPlan.toUpperCase()} Member
+                </span>`
+              : ""
+          }
+        </div>
+
+      </div>
     `;
   }
   return `₹${p.price.toLocaleString("en-IN")}`;

@@ -16,6 +16,55 @@
   <div id="profileInfo" class="profile-card"></div>
 
   {% if session.role != "admin" %}
+    <div class="membership-section">
+      <h3>Membership Plans</h3>
+
+      <div class="membership-grid">
+
+        <div class="membership-card silver">
+          <h4>Silver</h4>
+          <p class="membership-price">₹199 / Month</p>
+
+          <ul>
+            <li>3% extra discount</li>
+          </ul>
+
+          <button class="membership-btn" data-plan="silver" onclick="buyMembership('silver')">
+            Buy Silver
+          </button>
+        </div>
+
+        <div class="membership-card gold">
+          <h4>Gold</h4>
+          <p class="membership-price">₹499 / 3 Months</p>
+
+          <ul>
+            <li>5% discount</li>
+            <li>Free shipping</li>
+          </ul>
+
+          <button class="membership-btn" data-plan="gold" onclick="buyMembership('gold')">
+            Buy Gold
+          </button>
+        </div>
+
+        <div class="membership-card platinum">
+          <h4>Platinum</h4>
+          <p class="membership-price">₹999 / Year</p>
+
+          <ul>
+            <li>10% discount</li>
+            <li>Free shipping</li>
+            <li>Early campaign access</li>
+          </ul>
+
+          <button class="membership-btn" data-plan="platinum" onclick="buyMembership('platinum')">
+            Buy Platinum
+          </button>
+        </div>
+      </div>
+    </div>
+
     <hr>
     <h3>Recent Orders</h3>
     <div id="orderHistory"></div>

@@ -473,13 +473,50 @@ body > *:not(.app-footer) {
 }
 
 .discount-badge{
-  margin-left:6px;
   background:#dc2626;
   color:#fff;
   font-size:11px;
   padding:2px 6px;
   border-radius:4px;
   font-weight:600;
+}
+
+.price-wrapper{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.price-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.price-badges{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+
+.member-badge{
+  font-size:11px;
+  padding:3px 8px;
+  border-radius:6px;
+  font-weight:600;
+  color:white;
+}
+
+.member-badge.silver{
+  background:#9ca3af;
+}
+
+.member-badge.gold{
+  background:#f59e0b;
+}
+
+.member-badge.platinum{
+  background:#6366f1;
 }
 
 .mini-info .category,
@@ -1856,32 +1893,129 @@ select:focus {
   transition: 0.15s;
 }
 
-.cart-right {
-  background: #ffffff;
-  padding: 22px;
-  border-radius: 12px;
-  height: fit-content;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+/* Cart Summary Container */
+#cartSummary{
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 4px 14px rgba(0,0,0,0.08);
+  font-family:inherit;
 }
 
-.cart-right h3 {
-  margin-top: 0;
-  margin-bottom: 16px;
-  font-size: 18px;
-  font-weight: 600;
+/* Cart Summary Title */
+#cartSummary h3{
+  font-size:20px;
+  margin-bottom:18px;
+  font-weight:600;
 }
 
-.cart-summary-item {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  font-size: 14px;
+/* Summary Item Rows */
+.cart-summary-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:6px 0;
+  font-size:14px;
+  color:#333;
 }
 
-.cart-summary-total {
-  font-weight: bold;
-  font-size: 16px;
-  margin-top: 12px;
+/* Discount Row */
+.discount-line{
+  color:#d32f2f;
+  font-weight:500;
+}
+
+/* Divider */
+#cartSummary hr{
+  border:none;
+  border-top:1px solid #e5e5e5;
+  margin:10px 0;
+}
+
+/* Total Row */
+.cart-summary-total{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:17px;
+  font-weight:600;
+  margin-top:8px;
+}
+
+/* Total Amount Highlight */
+.cart-summary-total span:last-child{
+  color:#111;
+  font-size:18px;
+}
+
+/* Savings Line */
+.total-savings{
+  margin-top:10px;
+  font-size:14px;
+  color:#2e7d32;
+  font-weight:500;
+  position:relative;
+}
+
+/* Tooltip Icon */
+/* Tooltip Icon */
+.tooltip-icon{
+  margin-left:6px;
+  cursor:pointer;
+  font-size:14px;
+  color:#666;
+}
+
+/* Tooltip Container */
+.tooltip-container{
+  position:relative;
+  display:inline-block;
+}
+
+/* Tooltip Box */
+.tooltip-box{
+  position:absolute;
+  bottom:120%;
+  left:0;
+  background:#111;
+  color:#fff;
+  padding:8px 10px;
+  border-radius:6px;
+  font-size:12px;
+  white-space:nowrap;
+  display:none;
+  box-shadow:0 3px 10px rgba(0,0,0,0.2);
+}
+
+/* Tooltip Arrow */
+.tooltip-box::after{
+  content:"";
+  position:absolute;
+  top:100%;
+  left:10px;
+  border-width:6px;
+  border-style:solid;
+  border-color:#111 transparent transparent transparent;
+}
+
+.tooltip-product{
+  margin-bottom:8px;
+  padding-bottom:6px;
+  border-bottom:1px solid rgba(255,255,255,0.15);
+}
+
+.tooltip-product:last-child{
+  border-bottom:none;
+}
+
+.tooltip-line{
+  font-size:12px;
+  margin-left:6px;
+}
+
+/* Show Tooltip */
+.tooltip-container:hover .tooltip-box{
+  display:block;
 }
 
 .place-order-btn {
@@ -1909,6 +2043,104 @@ select:focus {
   border-radius: 12px;
   height: fit-content;
   box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+}
+
+/* Membership Section Grid */
+.membership-grid{
+  display:flex;
+  gap:22px;
+  flex-wrap:wrap;
+  margin-top:15px;
+}
+
+/* Membership Card */
+.membership-card{
+  background:#ffffff;
+  border-radius:12px;
+  padding:20px;
+  width:240px;
+  box-shadow:0 4px 14px rgba(0,0,0,0.08);
+  transition:all 0.25s ease;
+  border:1px solid #e5e7eb;
+  position:relative;
+}
+
+/* Hover Effect */
+.membership-card:hover{
+  transform:translateY(-5px);
+  box-shadow:0 8px 24px rgba(0,0,0,0.12);
+}
+
+/* Card Title */
+.membership-card h4{
+  margin-bottom:6px;
+  font-size:18px;
+  font-weight:600;
+}
+
+/* Price Text */
+.membership-price{
+  font-weight:600;
+  color:#1f2937;
+  margin-bottom:12px;
+}
+
+/* Benefits List */
+.membership-card ul{
+  padding-left:18px;
+  margin-bottom:16px;
+}
+
+.membership-card li{
+  font-size:14px;
+  margin-bottom:6px;
+  color:#374151;
+}
+
+/* Buy Button */
+.membership-btn{
+  width:100%;
+  padding:9px;
+  border:none;
+  border-radius:8px;
+  background:#2563eb;
+  color:white;
+  font-size:14px;
+  font-weight:500;
+  cursor:pointer;
+  transition:background 0.2s ease;
+}
+
+/* Button Hover */
+.membership-btn:hover{
+  background:#1e4fc7;
+}
+
+/* Disabled Button */
+.membership-disabled{
+  background:#9ca3af !important;
+  cursor:not-allowed;
+}
+
+/* Highlight Active Plan */
+.membership-active{
+  border:2px solid #2563eb;
+  background:#f0f6ff;
+}
+
+/* Silver Plan Accent */
+.membership-card.silver{
+  border-top:4px solid #9ca3af;
+}
+
+/* Gold Plan Accent */
+.membership-card.gold{
+  border-top:4px solid #f59e0b;
+}
+
+/* Platinum Plan Accent */
+.membership-card.platinum{
+  border-top:4px solid #6366f1;
 }
 
 .order-card {

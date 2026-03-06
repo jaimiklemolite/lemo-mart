@@ -85,8 +85,11 @@ def get_cart():
                 "name": product["name"],
                 "price": product.get("price"),
                 "offer_price": product.get("offer_price"),
+                "final_price": product.get("final_price"),
                 "original_price": product.get("original_price"),
                 "discount_percent": product.get("discount_percent"),
+                "member_discount": product.get("member_discount"),
+                "membership_plan": product.get("membership_plan"),
                 "qty": qty,
                 "stock": product.get("quantity", 0),
                 "image_url": product.get("image_url")

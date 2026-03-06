@@ -10,6 +10,7 @@ from routes.orders import order_bp
 from routes.admin import admin_bp
 from routes.wishlist import wishlist_bp
 from routes.admin_analytics import admin_analytics_bp
+from routes.membership import membership_bp
 import os
 
 load_dotenv()
@@ -28,6 +29,7 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(web_bp)
 app.register_blueprint(wishlist_bp)
 app.register_blueprint(admin_analytics_bp)
+app.register_blueprint(membership_bp)
 
 mongo.init_app(app)
 

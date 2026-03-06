@@ -89,6 +89,19 @@ def place_order():
     order_total = sum(item["subtotal"] for item in items)
     total_items = sum(item["qty"] for item in items)
 
+    # membership free shipping logic
+    shipping_cost = 50
+
+    user = mongo.db.users.find_one({"_id": user_id})
+    membership = user.get("membership") if user else None
+
+    if membership:
+        expiry = membership.get("expires_at")
+        if expiry and expiry > now and membership.get("free_shipping"):
+            shipping_cost = 0
+
+    grand_total = order_total + shipping_cost
+
     now = datetime.utcnow()
     year = now.year
     month = now.month
@@ -107,6 +120,8 @@ def place_order():
         "user_id": user_id,
         "items": items,
         "order_total": order_total,
+        "shipping_cost": shipping_cost,
+        "grand_total": grand_total,
         "total_items": total_items,
         "pricing_locked": True,
 

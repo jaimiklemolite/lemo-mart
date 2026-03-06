@@ -17,17 +17,57 @@ function loadCart() {
         lastQtyMap = {};
         return;
       }
-      
+
       document.getElementById("cartEmptyState").style.display = "none";
       itemsDiv.style.display = "flex";
       summaryDiv.style.display = "block";
 
+      let subtotal = 0;
+      let campaignDiscount = 0;
+      let membershipDiscount = 0;
+      let membershipPercent = 0;
+      let campaignPercent = 0;
       let totalAmount = 0;
+      let discountBreakdown = [];
 
       itemsDiv.innerHTML = data.items.map(item => {
-        const price = item.offer_price || item.price;
-        const itemTotal = price * item.qty;
-        totalAmount += itemTotal;
+        const basePrice = item.original_price || item.price;
+        const campaignPrice = item.offer_price || basePrice;
+        const finalPrice = item.final_price || campaignPrice;
+
+        const itemSubtotal = basePrice * item.qty;
+
+        const campaignSaved =
+          item.discount_percent
+            ? (basePrice - campaignPrice) * item.qty
+            : 0;
+
+        const membershipSaved =
+          item.member_discount
+            ? (campaignPrice - finalPrice) * item.qty
+            : 0;
+
+        subtotal += itemSubtotal;
+        totalAmount += finalPrice * item.qty;
+
+        campaignDiscount += campaignSaved;
+        membershipDiscount += membershipSaved;
+
+        discountBreakdown.push({
+          name: item.name,
+          campaign: campaignSaved,
+          membership: membershipSaved,
+          campaignPercent: item.discount_percent || 0,
+          membershipPercent: item.member_discount || 0
+        });
+
+        if (item.member_discount) {
+          membershipPercent = item.member_discount;
+        }
+
+        if (item.discount_percent) {
+          campaignPercent = item.discount_percent;
+        }
 
         const stock = item.stock ?? 9999;
         const prevQty = lastQtyMap[item.product_id];
@@ -45,8 +85,7 @@ function loadCart() {
               <div class="price">${renderPriceHTML(item)}</div>
 
               <div class="cart-actions">
-                <button
-                  onclick="decreaseQty('${item.product_id}', ${item.qty})"
+                <button onclick="decreaseQty('${item.product_id}', ${item.qty})"
                   ${item.qty <= 1 ? "disabled" : ""}>
                   −
                 </button>
@@ -55,8 +94,7 @@ function loadCart() {
                   ${item.qty}
                 </span>
 
-                <button
-                  onclick="increaseQty('${item.product_id}', ${item.qty}, ${stock})"
+                <button onclick="increaseQty('${item.product_id}', ${item.qty}, ${stock})"
                   ${item.qty >= stock ? "disabled" : ""}>
                   +
                 </button>
@@ -68,39 +106,89 @@ function loadCart() {
               Remove
             </button>
             <button class="remove-btn"
-                    onclick="moveToWishlist('${item.product_id}')">
+              onclick="moveToWishlist('${item.product_id}')">
               Move to Wishlist
             </button>
           </div>
         `;
       }).join("");
 
-      summaryDiv.style.display = "block";
-      summaryDiv.innerHTML = `
-        <h3>Cart Summary</h3>
+      const totalDiscount = campaignDiscount + membershipDiscount;
 
-        ${data.items.map(item => `
+      summaryDiv.innerHTML = `
+      <h3>Cart Summary</h3>
+      ${data.items.map(item => {
+        const basePrice = item.original_price || item.price;
+
+        return `
           <div class="cart-summary-item">
             <span>${item.name}</span>
-            <span>₹ ${(item.offer_price || item.price).toLocaleString("en-IN")} × ${item.qty}</span>
+            <span>₹ ${basePrice.toLocaleString("en-IN")} × ${item.qty}</span>
           </div>
-        `).join("")}
+        `;
+      }).join("")}
 
-        <hr>
+      <hr>
 
-        <div class="cart-summary-item">
-          <span>Amount</span>
-          <span>₹ ${totalAmount?.toLocaleString("en-IN") || 0}</span>
-        </div>
+      <div class="cart-summary-item">
+        <span>Subtotal</span>
+        <span>₹ ${subtotal.toLocaleString("en-IN")}</span>
+      </div>
 
-        <div class="cart-summary-total">
-          <span>Total (Including Shipping)</span>
-          <span>₹ ${totalAmount?.toLocaleString("en-IN") || 0}</span>
-        </div>
+      ${
+        totalDiscount > 0
+        ? `
+        <div class="cart-summary-item discount-line">
+          <span>Total Discount</span>
+          <span>- ₹ ${totalDiscount.toLocaleString("en-IN")}</span>
+        </div>`
+        : ""
+      }
 
-        <button class="place-order-btn" onclick="placeOrder()">
-          Place Order
-        </button>
+      <hr>
+
+      <div class="cart-summary-total">
+        <span>Total (Including Shipping)</span>
+        <span>₹ ${totalAmount.toLocaleString("en-IN")}</span>
+      </div>
+
+      ${
+        totalDiscount > 0
+        ? `
+        <div class="total-savings tooltip-container">
+          You saved on this order ₹ ${totalDiscount.toLocaleString("en-IN")}
+          <span class="tooltip-icon"><i class="fa-solid fa-circle-info"></i></span>
+          <div class="tooltip-box">
+            ${discountBreakdown.map(p => `
+
+              <div class="tooltip-product">
+                <strong>${p.name}</strong>
+                ${
+                  p.campaign > 0
+                  ? `<div class="tooltip-line">
+                      Campaign (${p.campaignPercent}%)
+                      : ₹ ${p.campaign.toLocaleString("en-IN")}
+                    </div>`
+                  : ""
+                }
+                ${
+                  p.membership > 0
+                  ? `<div class="tooltip-line">
+                      Membership (${p.membershipPercent}%)
+                      : ₹ ${p.membership.toLocaleString("en-IN")}
+                    </div>`
+                  : ""
+                }
+              </div>
+            `).join("")}
+          </div>
+        </div>`
+        : ""
+      }
+
+      <button class="place-order-btn" onclick="placeOrder()">
+        Place Order
+      </button>
       `;
     });
 }
